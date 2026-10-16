@@ -52,6 +52,45 @@ jobs:
             echo "Contenido de wwwroot:"
             ls -la ./publish/wwwroot || true
 
+      - name: Generar configuración de producción
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          API_TIMEOUT: ${{ vars.API_TIMEOUT }}
+          APPLICATION_NAME: ${{ vars.APPLICATION_NAME }}
+          APP_VERSION: ${{ vars.APP_VERSION }}
+          ENABLE_OFFLINE_MODE: ${{ vars.ENABLE_OFFLINE_MODE }}
+          ENABLE_PUSH_NOTIFICATIONS: ${{ vars.ENABLE_PUSH_NOTIFICATIONS }}
+          TENANT_ID: ${{ vars.TENANT_ID }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          config = {
+              "ApiSettings": {
+                  "BaseUrl": os.environ["API_BASE_URL"],
+                  "Timeout": int(os.environ["API_TIMEOUT"])
+              },
+              "ApplicationName": os.environ["APPLICATION_NAME"],
+              "Version": os.environ["APP_VERSION"],
+              "Features": {
+                  "EnableOfflineMode": os.environ["ENABLE_OFFLINE_MODE"].lower() == "true",
+                  "EnablePushNotifications": os.environ["ENABLE_PUSH_NOTIFICATIONS"].lower() == "true"
+              },
+              "TenantID": os.environ["TENANT_ID"]
+          }
+
+          target = Path("./publish/wwwroot/new/appsettings.json")
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_text(
+              json.dumps(config, indent=2, ensure_ascii=False),
+              encoding="utf-8"
+          )
+
+          print(f"Configuración generada: {target}")
+          PY
+
       - name: Desplegar en Azure
         uses: Azure/static-web-apps-deploy@v1
         with:
