@@ -31,8 +31,15 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Localizar CRM.Dtos
+        run: |
+          echo "Proyectos disponibles:"
+          find ./CRM -name "*.csproj"
+
       - name: Compilar y publicar Blazor
-        run: dotnet publish ./PWA/PWA.csproj -c Release -o ./publish
+        run: |
+          dotnet add ./PWA/PWA.csproj reference ./CRM/CRM.Dtos/CRM.Dtos.csproj
+          dotnet publish ./PWA/PWA.csproj -c Release -o ./publish
 
       - name: Desplegar en Azure
         uses: Azure/static-web-apps-deploy@v1
