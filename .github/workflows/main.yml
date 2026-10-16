@@ -21,8 +21,8 @@ jobs:
       - name: Descargar CRM.Dtos
         uses: actions/checkout@v4
         with:
-          repository: osmaga2012/CRM.git
-          path: CRM.Dtos
+          repository: osmaga2012/CRM
+          path: CRM
           # Necesario si CRM.Dtos es privado:
           token: ${{ secrets.CRM_DTOS_TOKEN }}
       - name: Instalar .NET
