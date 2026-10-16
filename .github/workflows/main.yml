@@ -21,7 +21,7 @@ jobs:
       - name: Descargar CRM.Dtos
         uses: actions/checkout@v4
         with:
-          repository: https://github.com/osmaga2012/CRM.git
+          repository: osmaga2012/CRM.git
           path: CRM.Dtos
           # Necesario si CRM.Dtos es privado:
           token: ${{ secrets.CRM_DTOS_TOKEN }}
