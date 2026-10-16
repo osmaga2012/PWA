@@ -15,8 +15,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Obtener codigo
-        uses: actions/checkout@v4
       - name: Descarga PWA
         uses: actions/checkout@v4
         with:
@@ -25,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: osmaga2012/CRM
-          path: CRM/CRM.Dtos
+          path: CRM
           # Necesario si CRM.Dtos es privado:
           token: ${{ secrets.CRM_DTOS_TOKEN }}
       - name: Instalar .NET
@@ -34,7 +32,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Compilar y publicar Blazor
-        run: dotnet publish ./PWA.csproj -c Release -o ./publish
+        run: dotnet publish .PWA/PWA.csproj -c Release -o ./publish
 
       - name: Desplegar en Azure
         uses: Azure/static-web-apps-deploy@v1
