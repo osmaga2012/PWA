@@ -18,7 +18,7 @@ jobs:
       - name: Obtener codigo
         uses: actions/checkout@v4
       - name: Descarga PWA
-        uses: actions/checout@v4
+        uses: actions/checkout@v4
         with:
              path: PWA
       - name: Descargar CRM.Dtos
