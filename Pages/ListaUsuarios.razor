@@ -1,0 +1,203 @@
+@page "/gestoria/usuarios"
+@using CRM.Dtos
+@using Microsoft.AspNetCore.Components.Authorization
+
+@attribute [Authorize]
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="usuarios-page">
+    @if (isLoading)
+    {
+        <div class="usuarios-loading">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-3">Cargando usuarios...</MudText>
+        </div>
+    }
+    else if (!Usuarios.Any())
+    {
+        <MudPaper Elevation="0" Class="usuarios-empty">
+            <MudAvatar Color="Color.Primary" Size="Size.Large" Class="usuarios-empty__avatar">
+                <MudIcon Icon="@Icons.Material.Filled.GroupOff" />
+            </MudAvatar>
+            <MudText Typo="Typo.h6" Class="mt-3">No hay usuarios</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Todavía no se han creado usuarios en esta empresa.</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudPaper Elevation="0" Class="usuarios-hero pa-4">
+            <div class="usuarios-hero__copy">
+                <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">
+                    @FilteredUsuarios.Count() usuarios
+                </MudChip>
+                <MudText Typo="Typo.h4" Class="usuarios-hero__title d-none d-md-block">Gestión de usuarios</MudText>
+                <MudText Typo="Typo.h5" Class="usuarios-hero__title d-md-none">Usuarios</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="usuarios-hero__subtitle">
+                    Administra accesos, roles y activación de cuentas.
+                </MudText>
+            </div>
+
+            <div class="usuarios-hero__actions">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.PersonAdd"
+                           OnClick="CrearNuevoUsuario"
+                           FullWidth="true"
+                           Class="usuarios-btn usuarios-btn--primary">
+                    Nuevo usuario
+                </MudButton>
+
+                @if (IsCurrentUserAdministrador())
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.MarkEmailRead"
+                               OnClick="@(async () => await EnviarEmailUsuariosEmpresa(Guid.Empty))"
+                               FullWidth="true"
+                               Class="usuarios-btn">
+                        Enviar activaciones
+                    </MudButton>
+                }
+            </div>
+        </MudPaper>
+
+        <MudPaper Elevation="0" Class="usuarios-search-panel pa-4">
+            <MudText Typo="Typo.caption" Class="section-label mt-4">BUSCAR</MudText>
+            <MudTextField @bind-Value="_filtroNombreUsuario"
+                          Placeholder="Buscar usuario, NIF o email..."
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Clearable="true"
+                          Immediate="true"
+                          Class="usuarios-search" />
+        </MudPaper>
+
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+
+            <MudPaper Class="pa-4">
+
+                <MudText Typo="Typo.caption" Class="section-label mt-4">LISTADO</MudText>
+
+                <MudStack Spacing="2" Class="usuarios-mobile-list pa-4">
+                @foreach (var item in FilteredUsuarios)
+                {
+                    <MudPaper Elevation="0" Class="usuarios-card pa-4">
+                        <div class="usuarios-card__top">
+                            <div class="usuarios-card__identity">
+                                <MudAvatar Color="Color.Primary" Size="Size.Medium" Class="usuarios-card__avatar">
+                                    @GetInitials(item.NombreUsuario)
+                                </MudAvatar>
+                                <div>
+                                    <MudText Typo="Typo.subtitle2" Class="usuarios-card__name">@item.NombreUsuario</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@item.NIFAcceso</MudText>
+                                </div>
+                            </div>
+
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                     Color="Color.Default"
+                                     Dense="true"
+                                     AnchorOrigin="Origin.TopRight"
+                                     TransformOrigin="Origin.TopRight">
+                                <MudMenuItem Icon="@Icons.Material.Filled.Edit"
+                                             OnClick="@(() => VerDetalleUsuario(item.Id))">
+                                    Editar
+                                </MudMenuItem>
+                                <MudMenuItem Icon="@Icons.Material.Filled.Send"
+                                             OnClick="@(() => EnviarEmailActivacion(item))">
+                                    Enviar email
+                                </MudMenuItem>
+                                <MudDivider />
+                                <MudMenuItem Icon="@Icons.Material.Filled.Delete"
+                                             IconColor="Color.Error"
+                                             OnClick="@(() => ConfirmarEliminar(item))">
+                                    Eliminar
+                                </MudMenuItem>
+                            </MudMenu>
+                        </div>
+
+                        <div class="usuarios-card__body">
+                            <div class="usuarios-card__row">
+                                <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Color="Color.Secondary" />
+                                <MudText Typo="Typo.body2" Class="usuarios-card__text">@item.EMail</MudText>
+                            </div>
+                            <div class="usuarios-card__row">
+                                <MudIcon Icon="@Icons.Material.Filled.Badge" Size="Size.Small" Color="Color.Secondary" />
+                                <MudText Typo="Typo.body2" Class="usuarios-card__text">@item.TipoUsuario</MudText>
+                            </div>
+                        </div>
+                    </MudPaper>
+                }
+            </MudStack>
+
+            </MudPaper>
+        </MudHidden>
+
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudText Typo="Typo.caption" Class="section-label mt-4">LISTADO</MudText>
+
+            <MudPaper Elevation="0" Class="usuarios-table-panel">
+                <MudTable Elevation="0"
+                          Dense="true"
+                          Hover="true"
+                          Items="@FilteredUsuarios"
+                          Class="usuarios-table">
+                    <HeaderContent>
+                        <MudTh Style="width:64px;"></MudTh>
+                        <MudTh>Usuario</MudTh>
+                        <MudTh>NIF/DNI</MudTh>
+                        <MudTh>Email</MudTh>
+                        <MudTh>Perfil</MudTh>
+                        <MudTh Style="width:60px;"></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>
+                            <MudAvatar Color="Color.Primary" Size="Size.Small">
+                                @GetInitials(context.NombreUsuario)
+                            </MudAvatar>
+                        </MudTd>
+                        <MudTd DataLabel="Usuario">
+                            <MudText Typo="Typo.body2" Class="usuarios-table__name">@context.NombreUsuario</MudText>
+                        </MudTd>
+                        <MudTd DataLabel="NIF/DNI">@context.NIFAcceso</MudTd>
+                        <MudTd DataLabel="Email">
+                            <div class="usuarios-table__email">
+                                <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Color="Color.Secondary" />
+                                <span>@context.EMail</span>
+                            </div>
+                        </MudTd>
+                        <MudTd DataLabel="Perfil">
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@GetColorPerfil(context)">
+                                @context.TipoUsuario
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Acciones">
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                     Color="Color.Default"
+                                     Dense="true"
+                                     AnchorOrigin="Origin.TopCenter">
+                                <MudMenuItem Icon="@Icons.Material.Filled.Edit"
+                                             OnClick="@(() => VerDetalleUsuario(context.Id))">
+                                    Editar
+                                </MudMenuItem>
+                                <MudMenuItem Icon="@Icons.Material.Filled.Send"
+                                             OnClick="@(() => EnviarEmailActivacion(context))">
+                                    Enviar email
+                                </MudMenuItem>
+                                <MudDivider />
+                                <MudMenuItem Icon="@Icons.Material.Filled.Delete"
+                                             IconColor="Color.Error"
+                                             OnClick="@(() => ConfirmarEliminar(context))">
+                                    Eliminar
+                                </MudMenuItem>
+                            </MudMenu>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudHidden>
+    }
+</MudContainer>

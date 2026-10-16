@@ -1,0 +1,1503 @@
+﻿/* ========================================
+   LIQUID BOTTOM NAV - ESTILOS GLOBALES
+   ======================================== */
+
+/* ?? Contenedor principal ?? */
+.liquid-nav-container {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 70px;
+    background: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    z-index: 999 !important;
+    padding: 0;
+    margin: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-radius: 0;
+}
+
+/* ?? Clip wrapper ?? */
+.liquid-gooey-clip {
+    position: relative;
+    width: 100%;
+    clip-path: inset(-50px 0 0 0);
+    filter: url('#liquid-gooey');
+    overflow: visible;
+}
+
+/* ?? NUEVO: La pista invisible que guía a la burbuja ?? */
+.liquid-indicator-track {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Slots de la pista: Copian exactamente el comportamiento elástico del botón */
+.liquid-track-slot {
+    position: relative;
+    flex-grow: 1;
+    flex-basis: 0;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: flex-grow 0.55s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.liquid-track-slot.active {
+    flex-grow: 1.6; /* Crece idéntico al botón activo */
+}
+
+/* ?? La Burbuja Líquida: Perfectamente centrada por su padre ?? */
+.liquid-indicator {
+    position: absolute;
+    top: -16px;
+    width: 66px;
+    height: 66px;
+    background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.08), inset 0 -2px 8px rgba(0, 0, 0, 0.05);
+    animation: bubblePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Anillo decorativo con color neutro */
+.liquid-indicator::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    background: linear-gradient(135deg, #CBD5E1, #94A3B8);
+    border-radius: 50%;
+    z-index: -1;
+    opacity: 0.4;
+}
+
+/* ?? La Barra de Botones Real ?? */
+.liquid-nav-bar {
+    position: relative;
+    width: 100%;
+    height: 60px;
+    background: #FFFFFF;
+    display: flex;
+    align-items: center;
+    filter: none;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+    border-top: 1px solid #E2E8F0;
+    color: #64748B;
+    overflow: visible;
+    border-radius: 0;
+}
+
+/* Botones individuales */
+.liquid-nav-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    flex-basis: 0;
+    height: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    z-index: 10;
+    -webkit-tap-highlight-color: transparent;
+    transition: flex-grow 0.55s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    text-decoration: none;
+}
+
+.liquid-nav-item.active {
+    flex-grow: 1.6;
+    transform: translateY(-15px) scale(1.1);
+}
+
+/* Contenedor interno del contenido del botón */
+.liquid-item-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* Iconos inactivos */
+.liquid-nav-item .mud-icon-root {
+    color: #94A3B8;
+    font-size: 1.5rem;
+    transform: translateY(0) scale(1);
+    transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s;
+}
+
+/* Texto inactivo */
+.liquid-nav-item span {
+    position: absolute;
+    bottom: 5px;
+    font-size: 0.6rem;
+    letter-spacing: 0.02em;
+    color: #94A3B8;
+    font-weight: 500;
+    transform: translateY(0);
+    opacity: 1;
+    transition: transform 0.35s, opacity 0.35s, color 0.3s, font-size 0.3s;
+    white-space: nowrap;
+}
+
+/* ?? ESTADOS ACTIVOS SINCRO ?? */
+.liquid-nav-item.active .mud-icon-root {
+    color: #0284C7;
+    transform: translateY(-10px) scale(1.2);
+    filter: drop-shadow(0 2px 6px rgba(2, 132, 199, 0.3));
+}
+
+.liquid-nav-item.active span {
+    transform: translateY(0);
+    opacity: 1;
+    font-size: 0.65rem;
+    color: #0369A1;
+    font-weight: 700;
+}
+
+/* Mini animación para que la burbuja aparezca de forma orgánica al cambiar de pestaña */
+@keyframes bubblePop {
+    0% {
+        transform: scale(0.7);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* ============================================
+   LAYOUT PRINCIPAL
+   ============================================ */
+
+:root {
+    --app-topbar-height: 70px;
+}
+
+.main-layout {
+    min-height: 100dvh;
+    overflow: hidden;
+    position: relative;
+    background: #F1F5F9;
+}
+
+/* ============================================
+   CONTENIDO PRINCIPAL
+   ============================================ */
+
+.main-content {
+    /*background-color: #F1F5F9;*/
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: padding 0.3s ease;
+}
+
+.main-content--desktop {
+    padding: calc(var(--app-topbar-height) + 24px) 24px 24px 24px;
+    height: 100dvh;
+}
+
+.sidebar-floating {
+    top: 0 !important;
+    bottom: 0 !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    position: fixed !important;
+    overflow: hidden !important;
+    background-color: #FFFFFF !important;
+    border-right: 1px solid #E2E8F0 !important;
+    z-index: 1110 !important;
+}
+
+.sidebar-floating .mud-drawer-content {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.cofradia-sidebar {
+    box-shadow: 12px 0 32px rgba(15, 23, 42, 0.06) !important;
+}
+
+.cofradia-sidebar .mud-drawer-content {
+    background:
+        radial-gradient(circle at 18% 8%, rgba(14, 116, 144, 0.10), transparent 28%),
+        linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+}
+
+.cofradia-sidebar-shell {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 10px 12px 18px;
+    overflow: hidden;
+}
+
+.cofradia-sidebar-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cofradia-sidebar-brand {
+    min-height: 54px;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid rgba(14, 116, 144, 0.16);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+.cofradia-sidebar-toggle {
+    width: 36px !important;
+    height: 36px !important;
+    flex: 0 0 36px;
+    border: 1px solid rgba(14, 116, 144, 0.16) !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.78) !important;
+    color: #0E7490 !important;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+}
+
+.cofradia-sidebar-brand__logo {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(14, 116, 144, 0.14);
+    border-radius: 14px;
+    background: #FFFFFF;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72), 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.cofradia-sidebar-brand__logo img {
+    width: 32px;
+    height: 32px;
+    display: block;
+    object-fit: contain;
+}
+
+.cofradia-sidebar-brand__text {
+    min-width: 0;
+    color: #0F172A;
+    line-height: 1.1;
+}
+
+.cofradia-sidebar-brand__title {
+    line-height: 1.05 !important;
+    white-space: normal;
+}
+
+.cofradia-sidebar-brand__text .mud-typography-caption {
+    color: #64748B;
+}
+
+.cofradia-sidebar-nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 0 2px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.cofradia-sidebar-nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.cofradia-sidebar-nav::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(14, 116, 144, 0.24);
+}
+
+.menu-label-pills {
+    min-height: 18px;
+    margin: 10px 8px 8px;
+    color: #64748B;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.pill-link {
+    min-height: 46px;
+    margin: 4px 0;
+    border-radius: 14px !important;
+    color: #334155 !important;
+    overflow: hidden;
+    transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.pill-link:hover {
+    background: rgba(14, 116, 144, 0.08) !important;
+    color: #0E7490 !important;
+    transform: translateX(2px);
+}
+
+.pill-link.active,
+.pill-link.mud-nav-link.active {
+    color: #0F172A !important;
+    background: linear-gradient(135deg, rgba(14, 116, 144, 0.18), rgba(2, 132, 199, 0.12)) !important;
+    box-shadow: inset 3px 0 0 #0E7490, 0 8px 18px rgba(14, 116, 144, 0.12);
+}
+
+.pill-link .mud-icon-root {
+    color: #0E7490;
+}
+
+.cofradia-sidebar-status {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid rgba(34, 197, 94, 0.20);
+    border-radius: 16px;
+    color: #166534;
+    background: rgba(240, 253, 244, 0.82);
+}
+
+.cofradia-sidebar-status .mud-icon-root {
+    color: #22C55E;
+    filter: drop-shadow(0 0 6px rgba(34, 197, 94, 0.42));
+}
+
+.cofradia-sidebar-status .mud-typography-caption:last-child {
+    color: #64748B;
+}
+
+.cofradia-sidebar--mini .cofradia-sidebar-shell {
+    padding: 10px 6px 14px;
+    align-items: center;
+}
+
+.cofradia-sidebar--mini .cofradia-sidebar-top {
+    width: 100%;
+    flex-direction: column;
+}
+
+.cofradia-sidebar--mini .cofradia-sidebar-brand,
+.cofradia-sidebar--mini .cofradia-sidebar-status {
+    width: 44px;
+    min-height: 44px;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 14px;
+}
+
+.cofradia-sidebar--mini .cofradia-sidebar-brand__logo {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+    border-radius: 12px;
+    box-shadow: none;
+}
+
+.cofradia-sidebar--mini .cofradia-sidebar-brand__logo img {
+    width: 28px;
+    height: 28px;
+}
+
+.cofradia-sidebar--mini .cofradia-sidebar-toggle {
+    width: 44px !important;
+    height: 36px !important;
+    flex-basis: 36px;
+}
+
+.cofradia-sidebar--mini .cofradia-sidebar-nav {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.cofradia-sidebar--mini .menu-label-pills {
+    width: 24px;
+    min-height: 4px;
+    height: 4px;
+    margin: 8px auto 6px;
+    overflow: hidden;
+    color: transparent;
+    font-size: 0;
+    border-radius: 999px;
+    background: rgba(14, 116, 144, 0.16);
+}
+
+.cofradia-sidebar--mini .pill-link {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    margin: 5px auto;
+    padding: 0 !important;
+    justify-content: center;
+}
+
+.cofradia-sidebar--mini .pill-link:hover {
+    transform: none;
+}
+
+.cofradia-sidebar--mini .pill-link .mud-nav-link-text {
+    display: none !important;
+}
+
+.cofradia-sidebar--mini .pill-link .mud-nav-link-icon {
+    margin: 0 !important;
+    min-width: 0 !important;
+}
+
+.cofradia-sidebar--mini .cofradia-sidebar-status .mud-icon-root {
+    font-size: 0.75rem;
+}
+
+.main-content--mobile {
+    padding: 16px;
+    padding-top: 86px;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    min-height: 100dvh;
+    height: 100dvh;
+    background: #F1F5F9;
+}
+
+.mobile-page-wrapper {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+/* Scroll suave en el contenido */
+.main-content {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Personalizar scrollbar para escritorio */
+.main-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.main-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ============================================
+   FILTROS SVG
+   ============================================ */
+
+.svg-filters {
+    display: none;
+    position: absolute;
+    width: 0;
+    height: 0;
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+/* Tablets en modo landscape */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .main-content--desktop {
+        padding: 80px 16px 16px 16px;
+    }
+}
+
+/* Móviles pequeños */
+@media (max-width: 375px) {
+    .main-content--mobile {
+        padding-left: 12px;
+        padding-right: 12px;
+        padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+/* Soporte para notch en móviles (iPhone X+) */
+@supports (padding: max(0px)) {
+    .main-content--mobile {
+        padding-left: max(16px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+        padding-bottom: max(96px, calc(80px + env(safe-area-inset-bottom)));
+    }
+}
+
+/* ============================================
+   ANIMACIONES Y TRANSICIONES
+   ============================================ */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.main-content > * {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* ============================================
+   MODO OSCURO (OPCIONAL)
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    .main-content {
+        /*background-color: #1e293b;*/
+    }
+
+    .main-content::-webkit-scrollbar-track {
+        background: #2d3748;
+    }
+
+    .main-content::-webkit-scrollbar-thumb {
+        background: #4a5568;
+    }
+
+    .main-content::-webkit-scrollbar-thumb:hover {
+        background: #718096;
+    }
+}
+
+/* ============================================
+   ACCESIBILIDAD
+   ============================================ */
+
+/* Reducir movimiento para usuarios con preferencias de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+    .main-content,
+    .main-content > * {
+        animation: none;
+        transition: none;
+    }
+}
+
+/* Focus visible mejorado */
+*:focus-visible {
+    outline: 2px solid #594ae2;
+    outline-offset: 2px;
+}
+
+/* ============================================
+   TOP MENU / APP BAR
+   ============================================ */
+
+.top-menu-bar {
+    background-color: white !important;
+    color: #0F172A !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
+    height: var(--app-topbar-height);
+    z-index: 1100 !important;
+}
+
+/* Icono de la aplicación */
+.app-icon {
+    color: #0284C7;
+    font-size: 1.8rem !important;
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+/* Título de la aplicación */
+.app-title {
+    color: #0F172A;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-left: 0;
+}
+
+.app-title-block {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+.app-page-title {
+    color: #0F172A;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cofradia-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.mobile-back-btn {
+    margin-right: 4px;
+}
+
+.notification-badge {
+    margin-right: 4px;
+}
+
+/* Campo de búsqueda */
+.search-field {
+    max-width: 260px;
+    margin-right: 16px;
+}
+
+.search-field .mud-input-outlined {
+    background: #F1F5F9;
+    border-radius: 10px;
+}
+
+.search-field .mud-input-outlined:hover,
+.search-field .mud-input-outlined:focus-within {
+    background: #E2E8F0;
+}
+
+.search-field input {
+    font-size: 0.875rem;
+}
+
+/* Avatar de usuario */
+.user-avatar {
+    background-color: #E0F2FE !important;
+    color: #0369A1 !important;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.user-avatar:hover {
+    transform: scale(1.05);
+}
+
+/* Botón de notificaciones */
+.mud-icon-button[aria-label="Notificaciones"] {
+    color: #64748B;
+    margin-right: 8px;
+}
+
+/* ============================================
+   RESPONSIVE TOPMENU
+   ============================================ */
+
+/* Tablets y pantallas medianas */
+@media (max-width: 960px) {
+    :root {
+        --app-topbar-height: 60px;
+    }
+
+    .search-field {
+        max-width: 180px;
+    }
+
+    .app-title {
+        font-size: 1rem;
+    }
+}
+
+/* Móviles */
+@media (max-width: 600px) {
+    .search-field {
+        display: none;
+    }
+
+    .top-menu-bar {
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    .main-content--mobile {
+        padding-top: 76px;
+    }
+
+    .app-title {
+        font-size: 0.875rem;
+    }
+
+    .app-icon {
+        font-size: 1.4rem !important;
+        margin-left: 2px;
+        margin-right: 4px;
+    }
+
+    .user-avatar {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 0.8rem !important;
+    }
+}
+
+/* ============================================
+   MENÚ DROPDOWN DEL USUARIO
+   ============================================ */
+
+.mud-menu-item {
+    min-height: 48px;
+}
+
+.mud-menu-item:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+.mud-menu .mud-list-item-icon {
+    min-width: 40px;
+}
+
+/* ============================================
+   ANIMACIONES
+   ============================================ */
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.top-menu-bar {
+    animation: slideDown 0.3s ease-out;
+}
+
+/* ============================================
+   LOGIN PAGE
+   ============================================ */
+
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 1120px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 420px);
+    gap: 28px;
+    align-items: center;
+}
+
+.login-card {
+    background: white;
+    border-radius: 16px;
+    padding: 48px 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.4s ease-out;
+    width: 100%;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.login-logo {
+    width: auto;
+    height: 118px;
+    max-width: 160px;
+    object-fit: contain;
+    margin-bottom: 16px;
+}
+
+.login-title {
+    color: #1e293b;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.login-subtitle {
+    color: #64748b;
+}
+
+.login-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.forgot-password-link {
+    font-size: 0.875rem;
+    color: #667eea;
+    text-decoration: none;
+}
+
+.forgot-password-link:hover {
+    text-decoration: underline;
+}
+
+.login-button {
+    height: 48px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0.5px;
+    margin-top: 16px;
+}
+
+.register-section {
+    margin-top: 16px;
+}
+
+.login-footer {
+    margin-top: 24px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.login-poster-card {
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24);
+    animation: slideUp 0.45s ease-out;
+    width: 100%;
+}
+
+.login-poster-kicker {
+    display: block;
+    margin-bottom: 10px;
+    color: #0f172a;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.login-poster-image,
+.cofradia-program-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+}
+
+.cofradia-program-card {
+    overflow: hidden;
+    border-radius: 16px !important;
+    background: #ffffff;
+    border-color: rgba(14, 116, 144, 0.22) !important;
+}
+
+.cofradia-program-card--desktop {
+    padding: 12px;
+    margin-bottom: 8px;
+}
+
+.cofradia-program-card--desktop .cofradia-program-image {
+    max-height: 260px;
+    object-fit: contain;
+}
+
+.cofradia-program-title {
+    display: block;
+    margin-bottom: 10px;
+    color: #475569;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.cofradia-program-card--mobile {
+    padding: 8px;
+    margin-bottom: 18px;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 980px) {
+    .login-container {
+        max-width: 560px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .login-card {
+        order: 1;
+    }
+
+    .login-poster-card {
+        order: 2;
+        margin-top: 20px;
+    }
+}
+
+@media (max-width: 600px) {
+    .login-container {
+        max-width: 440px;
+    }
+
+    .login-card {
+        padding: 32px 24px;
+    }
+
+    .login-logo {
+        height: 96px;
+        max-width: 136px;
+    }
+
+    .login-title {
+        font-size: 1.5rem;
+    }
+
+    .login-options {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .login-poster-card {
+        margin-top: 18px;
+        padding: 10px;
+    }
+
+    .login-poster-kicker {
+        font-size: 0.68rem;
+        margin-bottom: 8px;
+    }
+}
+
+/* Redirección */
+.redirect-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+/* Autorización */
+.authorization-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* ============================================
+   MOBILE CONTENT PATTERNS
+   ============================================ */
+
+.mobile-list-page,
+.home-page,
+.perfil-page {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.home-app-status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.home-app-status-card {
+    min-height: 118px;
+    padding: 12px;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 14px !important;
+    background:
+        radial-gradient(circle at 12% 12%, rgba(14, 116, 144, 0.08), transparent 28%),
+        #FFFFFF !important;
+}
+
+.home-app-status-card--action {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.home-app-status-card--action:active {
+    transform: scale(0.98);
+}
+
+.home-app-status-card__top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.home-app-status-card__icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    flex: 0 0 34px;
+    border-radius: 10px;
+    background: #F1F5F9;
+}
+
+.home-app-status-card__label {
+    min-width: 0;
+    color: #64748B;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.home-app-status-card__title {
+    margin-bottom: 8px;
+    color: #0F172A;
+    font-weight: 800;
+}
+
+.mobile-page-header,
+.barcos-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.mobile-search,
+.barcos-search-bar {
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.mobile-data-card,
+.barco-card,
+.quick-card,
+.status-card,
+.perfil-section {
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    background: #FFFFFF;
+}
+
+.mobile-data-card {
+    padding: 14px;
+}
+
+.mobile-data-card--button {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-data-card__header,
+.barco-card__top,
+.status-row,
+.perfil-info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.mobile-data-card__header {
+    justify-content: space-between;
+}
+
+.mobile-data-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin-top: 10px;
+    color: #64748B;
+    font-size: 0.78rem;
+}
+
+.mobile-empty-state,
+.barcos-empty,
+.barcos-loading {
+    display: grid;
+    place-items: center;
+    min-height: 180px;
+    padding: 24px;
+    text-align: center;
+    color: #64748B;
+}
+
+.mobile-empty-state .mud-icon-root {
+    color: #CBD5E1;
+    font-size: 3rem;
+    margin-bottom: 8px;
+}
+
+.mobile-tabs-paper,
+.mobile-flush-card {
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+    overflow: hidden;
+}
+
+.mobile-tab-panel {
+    padding: 12px;
+}
+
+.mobile-fullscreen-editor {
+    position: fixed;
+    inset: 0;
+    z-index: 1400;
+    display: flex;
+    flex-direction: column;
+    background: #F8FAFC;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.mobile-fullscreen-editor__bar {
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #FFFFFF;
+    border-bottom: 1px solid #E2E8F0;
+    flex: 0 0 auto;
+}
+
+.mobile-fullscreen-editor__title {
+    min-width: 0;
+}
+
+.mobile-fullscreen-editor__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 12px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.mobile-fullscreen-editor__body > .mud-paper {
+    box-shadow: none !important;
+    border-radius: 8px !important;
+}
+
+.tramite-masivo-form .mud-toolbar {
+    min-height: 48px;
+}
+
+.tramite-masivo-destination-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+}
+
+.barcos-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+}
+
+.barco-card {
+    padding: 14px;
+}
+
+.barco-card__info {
+    min-width: 0;
+    flex: 1;
+}
+
+.barco-card__badge {
+    flex: 0 0 auto;
+}
+
+.barco-card__actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.quick-access-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.quick-card {
+    min-height: 128px;
+    padding: 14px;
+}
+
+.quick-card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.section-label {
+    color: #64748B;
+    font-weight: 700;
+}
+
+.status-card,
+.perfil-section {
+    padding: 14px;
+}
+
+@media (max-width: 420px) {
+    .barco-card__actions {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .barco-card__actions .barco-card__action--primary {
+        grid-column: 1 / -1;
+    }
+
+    .quick-access-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* ============================================
+   HOME PAGE
+   ============================================ */
+
+.home-greeting {
+    background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
+    border-radius: 12px;
+    padding: 18px 16px;
+    color: #FFFFFF;
+    margin-bottom: 4px;
+}
+
+.home-greeting .greeting-title {
+    color: #FFFFFF;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.home-greeting .mud-typography-body2 {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.home-stats-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.home-stat-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 10px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+}
+
+.home-stat-chip__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.home-stat-chip__value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0F172A;
+    line-height: 1.1;
+}
+
+.home-stat-chip__label {
+    font-size: 0.72rem;
+    color: #64748B;
+}
+
+.quick-card {
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.quick-card:active {
+    transform: scale(0.97);
+}
+
+.quick-card-label {
+    font-weight: 600;
+}
+
+/* ============================================
+   PERFIL PAGE
+   ============================================ */
+
+.perfil-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 24px 16px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+}
+
+.perfil-avatar {
+    width: 80px !important;
+    height: 80px !important;
+    font-size: 1.5rem !important;
+    font-weight: 700;
+}
+
+.perfil-name {
+    font-weight: 700;
+}
+
+.perfil-action-row {
+    min-height: 52px;
+    cursor: pointer;
+}
+
+.perfil-action-row:active {
+    background: #F1F5F9;
+}
+
+.perfil-logout-section {
+    margin-top: 8px;
+    padding-bottom: 8px;
+}
+
+.perfil-logout-btn {
+    min-height: 48px;
+}
+
+/* ============================================
+   FLOTA / BARCOS MOBILE
+   ============================================ */
+
+.barcos-stat-card {
+    display: flex;
+    align-items: center;
+    padding: 14px;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    background: #FFFFFF;
+}
+
+.mobile-stat-chips {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.mobile-stat-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+}
+
+.mobile-stat-chip__value {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #0F172A;
+}
+
+.mobile-stat-chip__label {
+    font-size: 0.7rem;
+    color: #64748B;
+}
+
+.barco-card {
+    transition: box-shadow 0.15s ease;
+}
+
+.barco-card:active {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.barco-card__alert {
+    margin-top: 8px;
+    border-radius: 8px;
+}
+
+.barco-card__actions .mud-button-root {
+    min-height: 40px;
+}
+
+.mobile-search-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #F1F5F9;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+}
+
+/* Touch targets mínimos */
+.liquid-nav-item,
+.mobile-data-card--button,
+.quick-card,
+.perfil-action-row {
+    min-height: 44px;
+}
+
+/* Mejoras bottom nav en móvil pequeño */
+@media (max-width: 380px) {
+    .liquid-nav-item span {
+        font-size: 0.55rem;
+    }
+
+    .liquid-nav-item .mud-icon-root {
+        font-size: 1.3rem;
+    }
+}

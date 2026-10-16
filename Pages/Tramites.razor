@@ -1,0 +1,67 @@
+@page "/tramites"
+@attribute [Authorize]
+
+<MudItem xl="12" lg="12" xs="12">
+    <div class="mobile-page-header tramites-barco-header">
+        <div>
+            <MudText Typo="Typo.h6" Class="fw-bold">Gestión de trámites</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Trámites masivos y asignaciones</MudText>
+        </div>
+        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">
+            @tramites.Count
+        </MudChip>
+    </div>
+
+    <MudHidden Breakpoint="Breakpoint.MdAndUp">
+        <TablaTramitesMasivos Tramites="@tramites"
+                              IsLoading="@_isLoading"
+                              OnNuevoTramite="IniciarCreacionTramite"
+                              OnTramiteSeleccionado="SeleccionarTramite"
+                              OnTramitesChanged="CargarTramites" />
+
+        @if (_mobileEditorOpen)
+        {
+            <div class="mobile-fullscreen-editor" role="dialog" aria-modal="true" aria-labelledby="mobile-editor-title">
+                <div class="mobile-fullscreen-editor__bar">
+                    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                   Color="Color.Default"
+                                   Edge="Edge.Start"
+                                   OnClick="CerrarEditorMovil"
+                                   aria-label="Cerrar edición" />
+                    <div class="mobile-fullscreen-editor__title">
+                        <MudText Typo="Typo.subtitle1" Class="fw-bold" id="mobile-editor-title">
+                            @(_selectedTramiteId.HasValue ? "Editar trámite" : "Nuevo trámite")
+                        </MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            @(string.IsNullOrWhiteSpace(_tramiteSeleccionado?.NombreTramite) ? "Trámite masivo" : _tramiteSeleccionado.NombreTramite)
+                        </MudText>
+                    </div>
+                </div>
+                <div class="mobile-fullscreen-editor__body">
+                    <FormularioTramiteMasivo @key="_editorKey"
+                                             IdTramite="@_selectedTramiteId"
+                                             OnCancelar="CerrarEditorMovil"
+                                             OnGuardar="ProcesarGuardado" />
+                </div>
+            </div>
+        }
+    </MudHidden>
+
+    <MudHidden Breakpoint="Breakpoint.MdAndDown">
+        <MudGrid>
+            <MudItem xs="6">
+                <TablaTramitesMasivos Tramites="@tramites"
+                                      IsLoading="@_isLoading"
+                                      OnNuevoTramite="IniciarCreacionTramite"
+                                      OnTramiteSeleccionado="SeleccionarTramite"
+                                      OnTramitesChanged="CargarTramites" />
+            </MudItem>
+            <MudItem xs="6">
+                <FormularioTramiteMasivo @key="_editorKey"
+                                         IdTramite="@_selectedTramiteId"
+                                         OnCancelar="LimpiarFormulario"
+                                         OnGuardar="ProcesarGuardado" />
+            </MudItem>
+        </MudGrid>
+    </MudHidden>
+</MudItem>

@@ -1,0 +1,193 @@
+﻿<MudPaper Elevation="4" Class="rounded-0 overflow-hidden border border-solid mud-border-lines-default w-100">
+    @* Encabezado del Formulario *@
+    <MudToolBar Dense Class="mud-theme-primary rounded-0 px-4">
+        <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" Size="Size.Small" />
+        <MudText Typo="Typo.subtitle2" Style="font-weight: 700; text-transform: uppercase;">
+            @if (barco == null)
+            {
+                <text>Gestión de Trámite</text>
+            }
+            else
+            {
+                <text>Gestión de Trámite para la embarcación @barco.CodigoBarco</text>
+            }
+        </MudText>
+    </MudToolBar>
+
+    <MudForm Model="@tramite" @ref="form" @bind-IsValid="success" Class="pa-6">
+        <MudStack Spacing="4">
+
+            <MudTextField Label="Nombre del Certificado"
+                          @bind-Value="tramite.Certificado"
+                          For="@(() => tramite.Certificado)"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Required="true"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Badge"
+                          Class="rounded-0" />
+
+            <MudGrid Spacing="2">
+                <MudItem xs="6">
+                    <MudDatePicker Label="Inicio"
+                                   @bind-Date="tramite.FechaInicioParser"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   DateFormat="dd/MM/yyyy"
+                                   Class="rounded-0" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker Label="Caducidad"
+                                   @bind-Date="tramite.FechaFinParser"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   DateFormat="dd/MM/yyyy"
+                                   Class="rounded-0" />
+                </MudItem>
+            </MudGrid>
+
+            <MudStack Row AlignItems="AlignItems.Center">
+                <MudTextField Label="Días de aviso"
+                              @bind-Value="tramite.DiasAvisoTramite"
+                              InputType="InputType.Number"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Adornment="Adornment.End"
+                              AdornmentText="días"
+                              Class="rounded-0" />
+                <MudTooltip Text="Aviso X días antes de caducar.">
+                    <MudIcon Icon="@Icons.Material.Filled.HelpOutline" Color="Color.Info" Size="Size.Small" />
+                </MudTooltip>
+            </MudStack>
+
+            <MudTextField Label="Observaciones"
+                          @bind-Value="tramite.Observaciones"
+                          Variant="Variant.Outlined"
+                          Lines="3"
+                          Class="rounded-0" />
+
+            @* Emails Section *@
+            <MudStack Spacing="1">
+                <MudText Typo="Typo.caption" Class="font-bold">NOTIFICAR A:</MudText>
+                <MudTextField @bind-Value="_emailInput"
+                              Placeholder="email@ejemplo.com + Enter"
+                              OnKeyDown="OnEmailKeyDown"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Email"
+                              Error="@(!string.IsNullOrWhiteSpace(_emailError))"
+                              ErrorText="@_emailError"
+                              HelperText="Se guardan como destinatarios manuales de aviso."
+                              Class="rounded-0" />
+
+                <div class="d-flex flex-wrap gap-1 mt-2">
+                    @foreach (var mail in EmailsAviso)
+                    {
+                        <MudChip T="string" Text="@mail"
+                                 Color="Color.Primary"
+                                 Variant="Variant.Filled"
+                                 Size="Size.Small"
+                                 OnClose="@((c) => RemoveEmail(c.Text))"
+                                 Class="rounded-0" />
+                    }
+                </div>
+            </MudStack>
+
+            @* DOCUMENTOS ADJUNTOS *@
+            <div class="file-upload-zone">
+                <MudText Typo="Typo.caption" Class="font-bold mb-1 d-block">DOCUMENTOS ADJUNTOS</MudText>
+
+                <div class="d-flex align-center border border-dashed pa-2">
+                    <InputFile OnChange="OnFileChanged" id="fileInput" multiple hidden />
+                    <MudIconButton HtmlTag="label" for="fileInput"
+                                   Icon="@Icons.Material.Filled.CloudUpload"
+                                   Color="Color.Primary" />
+                    <MudText Typo="Typo.caption" Class="ml-2">Seleccionar archivos</MudText>
+                </div>
+
+                @* Lista de archivos seleccionados (pendientes de subir) *@
+                <MudList T="string">
+                    @foreach (var file in selectedFiles)
+                    {
+                        <MudListItem Icon="@Icons.Material.Filled.Description">
+                            @file.Name
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="() => RemoveSelected(file)" Size="Size.Small" />
+                        </MudListItem>
+                    }
+                    @* Lista de archivos ya guardados (para descargar) *@
+                    @foreach (var path in existingFiles)
+                    {
+                        <MudListItem Icon="@Icons.Material.Filled.Download">
+                            <MudLink Href="@GetFileUrl(path)" Target="_blank">@GetFileName(path)</MudLink>
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="() => MarkForDeletion(path)" Size="Size.Small" />
+                        </MudListItem>
+                    }
+
+                    @* 2. Archivos nuevos (pendientes de subir) *@
+                    @foreach (var file in selectedFiles)
+                    {
+                        <MudListItem Icon="@Icons.Material.Filled.CloudUpload" Class="mud-text-secondary">
+                            @file.Name (Pendiente de subir)
+                            <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="() => RemoveSelected(file)" />
+                        </MudListItem>
+                    }
+                </MudList>
+            </div>
+
+            @* Adjunto - Estilo Mejorado *@
+            @*            <div class="file-upload-zone">
+                <MudText Typo="Typo.caption" Class="font-bold mb-1 d-block">DOCUMENTO ADJUNTO</MudText>
+                <div class="d-flex align-center border border-dashed pa-2">
+                    <InputFile OnChange="OnFileChanged" id="fileInput" hidden />
+                    <MudIconButton HtmlTag="label" for="fileInput"
+                                   Icon="@Icons.Material.Filled.CloudUpload"
+                                   Color="Color.Primary" />
+
+
+
+                    <MudText Typo="Typo.caption" Class="ml-2 truncate">
+                        @(selectedFileName ?? existingFileName ?? "Sin archivo")
+                    </MudText>
+                    <MudSpacer />
+                    @if (!string.IsNullOrEmpty(selectedFileName))
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       OnClick="ClearSelectedFile" />
+                    }
+                </div>
+            </div> *@
+
+            @* Panel de Información *@
+            <MudExpansionPanels Elevation="0" Class="border border-solid mud-border-lines-default">
+                <MudExpansionPanel Text="Detalles del Registro" Class="rounded-0">
+                    <MudStack Spacing="1">
+                        <MudText Typo="Typo.caption">Aviso programado: <b>@tramite.FechaAviso.ToString("dd/MM/yyyy")</b></MudText>
+                        <MudText Typo="Typo.caption">Último envío: <b>@(tramite.UltimoEnvio ?? "Nunca")</b></MudText>
+                    </MudStack>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+
+            @* Acciones Formulario *@
+            <MudStack Row Spacing="2" Class="mt-4">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth
+                           Class="rounded-0 py-2"
+                           StartIcon="@Icons.Material.Filled.Save"
+                           OnClick="GuardarDatos">
+                    Guardar Trámite
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Default"
+                           Class="rounded-0 py-2"
+                           OnClick="Cancelar">
+                    Cancelar
+                </MudButton>
+            </MudStack>
+
+        </MudStack>
+    </MudForm>
+</MudPaper>

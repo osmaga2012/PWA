@@ -1,0 +1,119 @@
+/*.barcos-page {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.barcos-container {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    padding: 16px;
+}
+
+.barcos-hero {
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.92));
+}
+
+.barcos-hero__content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.barcos-hero__title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.barcos-hero__stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.barcos-hero__actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.barcos-search {
+    flex: 1 1 320px;
+    max-width: 520px;
+}
+
+.barcos-loading,
+.barcos-empty {
+    min-height: 240px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 24px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.9);
+}
+
+.barcos-card {
+    border-radius: 16px;
+    padding: 16px;
+    border-left: 5px solid var(--mud-palette-primary);
+    margin-bottom: 12px;
+    background: rgba(255,255,255,0.98);
+}
+
+.barcos-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.barcos-card__info {
+    min-width: 0;
+}
+
+.barcos-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.barcos-table {
+    border-radius: 16px;
+    overflow: hidden;
+    background: white;
+}
+
+@media (max-width: 768px) {
+    .barcos-container {
+        padding: 12px;
+    }
+
+    .barcos-hero {
+        padding: 14px;
+    }
+
+    .barcos-hero__content,
+    .barcos-hero__actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .barcos-search {
+        max-width: none;
+        width: 100%;
+    }
+}*/

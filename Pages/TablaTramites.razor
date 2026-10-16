@@ -1,0 +1,77 @@
+<MudCard Outlined="true" Class="pa-4 mobile-flush-card">
+    <div class="d-flex justify-space-between align-center mb-3">
+        <MudText Typo="Typo.h6">Trámites Asociados</MudText>
+
+        <MudButton Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Color="Color.Primary"
+                   Size="Size.Small"
+                   OnClick="AbrirNuevoTramite">
+            <MudHidden Breakpoint="Breakpoint.Xs">Nuevo</MudHidden>
+        </MudButton>
+    </div>
+
+    <MudHidden Breakpoint="Breakpoint.MdAndUp">
+        @if (!Tramites.Any())
+        {
+            <div class="mobile-empty-state">
+                <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" />
+                <MudText Typo="Typo.body1" Class="fw-bold">Sin trámites asociados</MudText>
+            </div>
+        }
+        else
+        {
+            <MudStack Spacing="2">
+                @foreach (var tramite in Tramites)
+                {
+                    <MudPaper Elevation="0"
+                              Class="mobile-data-card mobile-data-card--button"
+                              @onclick="() => OnItemChanged(tramite)">
+                        <div class="mobile-data-card__header">
+                            <div>
+                                <MudText Typo="Typo.overline" Color="Color.Secondary">Certificado</MudText>
+                                <MudText Typo="Typo.subtitle2" Class="fw-bold">@GetNombreCertificado(tramite)</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Estado: @GetTextoEstado(tramite.Estado)</MudText>
+                            </div>
+                            <MudChip T="string" Color="@GetColorEstado(tramite.Estado)" Size="Size.Small">
+                                @GetTextoEstado(tramite.Estado)
+                            </MudChip>
+                        </div>
+                        <div class="mobile-data-card__meta">
+                            <span>Inicio: @FormatDate(tramite.FechaInicioParser)</span>
+                            <span>Fin: @FormatDate(tramite.FechaFinParser)</span>
+                        </div>
+                    </MudPaper>
+                }
+            </MudStack>
+        }
+    </MudHidden>
+
+    <MudHidden Breakpoint="Breakpoint.MdAndDown">
+        <MudTable Items="@Tramites" Dense="true" Hover="true" RowClass="cursor-pointer"
+                  T="BarcosTramitesDto" SelectedItemChanged="OnItemChanged">
+            <HeaderContent>
+                <MudTh>Certificado</MudTh>
+                <MudTh>Fecha fin</MudTh>
+                <MudTh>Estado</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Certificado">
+                    <MudText Typo="Typo.body2" Class="fw-bold">@GetNombreCertificado(context)</MudText>
+                    @if (!string.IsNullOrWhiteSpace(context.Observaciones))
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Observaciones</MudText>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Fecha fin">
+                    <MudText Typo="Typo.body2">@FormatDate(context.FechaFinParser)</MudText>
+                </MudTd>
+                <MudTd DataLabel="Estado">
+                    <MudChip T="string" Color="@GetColorEstado(context.Estado)" Size="Size.Small">
+                        @GetTextoEstado(context.Estado)
+                    </MudChip>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudHidden>
+</MudCard>

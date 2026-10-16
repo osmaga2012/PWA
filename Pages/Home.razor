@@ -1,0 +1,427 @@
+﻿@page "/"
+@attribute [Authorize]
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using PWA.Interfaces
+@inject ICurrentUserService CurrentUserService
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IDialogService DialogService
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+
+<PageTitle>Inicio - CRM</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+
+            <div class="home-page">
+                <div class="home-app-status-grid">
+                    <MudPaper Class="home-app-status-card home-app-status-card--action"
+                              Elevation="0"
+                              Outlined="true"
+                              @onclick="InstalarAplicacion">
+                        <div class="home-app-status-card__top">
+                            <div class="home-app-status-card__icon">
+                                <MudIcon Icon="@(_estaInstalada ? Icons.Material.Filled.InstallDesktop : Icons.Material.Filled.GetApp)"
+                                         Color="@(_estaInstalada ? Color.Success : Color.Warning)" />
+                            </div>
+                            <MudText Typo="Typo.caption" Class="home-app-status-card__label">Aplicación</MudText>
+                        </div>
+                        <MudText Typo="Typo.subtitle2" Class="home-app-status-card__title">
+                            @(_estaInstalada ? "Instalada" : "No instalada")
+                        </MudText>
+                        <MudChip T="string"
+                                 Size="Size.Small"
+                                 Color="@(_estaInstalada ? Color.Success : Color.Warning)"
+                                 Variant="Variant.Outlined">
+                            @(_estaInstalada ? "Modo app" : "Modo web")
+                        </MudChip>
+                    </MudPaper>
+
+                    <MudPaper Class="home-app-status-card home-app-status-card--action"
+                              Elevation="0"
+                              Outlined="true"
+                              @onclick="ActivarNotificaciones">
+                        <div class="home-app-status-card__top">
+                            <div class="home-app-status-card__icon">
+                                <MudIcon Icon="@GetNotificationIcon()" Color="@GetNotificationColor()" />
+                            </div>
+                            <MudText Typo="Typo.caption" Class="home-app-status-card__label">Notificaciones</MudText>
+                        </div>
+                        <MudText Typo="Typo.subtitle2" Class="home-app-status-card__title">
+                            @GetNotificationTitle()
+                        </MudText>
+                        <MudChip T="string"
+                                 Size="Size.Small"
+                                 Color="@GetNotificationColor()"
+                                 Variant="Variant.Outlined">
+                            @GetNotificationChipText()
+                        </MudChip>
+                    </MudPaper>
+                </div>
+                <div class="home-greeting">
+                    <MudText Typo="Typo.h6" Class="greeting-title">
+                        Hola, @GetFirstName(context.User.Identity?.Name)
+                    </MudText>
+                    <MudText Typo="Typo.body2">
+                        @DateTime.Now.ToString("dddd, d 'de' MMMM", new System.Globalization.CultureInfo("es-ES"))
+                    </MudText>
+                </div>
+
+                <MudText Typo="Typo.caption" Class="section-label">RESUMEN</MudText>
+                <div class="home-stats-row">
+                    <div class="home-stat-chip">
+                        <div class="home-stat-chip__icon" style="background: #E0F2FE;">
+                            <MudIcon Icon="@Icons.Material.Filled.DirectionsBoat" Color="Color.Primary" />
+                        </div>
+                        <div>
+                            <div class="home-stat-chip__value">—</div>
+                            <div class="home-stat-chip__label">
+                                @(_esAdmin ? "Embarcaciones" : "Mis barcos")
+                            </div>
+                        </div>
+                    </div>
+                    <div class="home-stat-chip">
+                        <div class="home-stat-chip__icon" style="background: #FEF3C7;">
+                            <MudIcon Icon="@Icons.Material.Filled.NotificationImportant" Color="Color.Warning" />
+                        </div>
+                        <div>
+                            <div class="home-stat-chip__value">—</div>
+                            <div class="home-stat-chip__label">Avisos pendientes</div>
+                        </div>
+                    </div>
+                </div>
+
+                <MudText Typo="Typo.caption" Class="section-label">ACCESO RÁPIDO</MudText>
+                <div class="quick-access-grid">
+
+                    <MudPaper Class="quick-card" Elevation="0" @onclick='() => NavManager.NavigateTo("barcos")'>
+                        <div class="quick-card-icon" style="background: linear-gradient(135deg, #0284C7, #0369A1);">
+                            <MudIcon Icon="@Icons.Material.Filled.DirectionsBoat" Style="color:white; font-size:1.6rem;" />
+                        </div>
+                        <MudText Typo="Typo.subtitle2" Class="quick-card-label">Flota</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="quick-card-sub">
+                            @(_esAdmin ? "Toda la cofradía" : "Mis embarcaciones")
+                        </MudText>
+                    </MudPaper>
+
+                    @if (_puedeVerTramites)
+                    {
+                        <MudPaper Class="quick-card" Elevation="0" @onclick='() => NavManager.NavigateTo("tramites")'>
+                            <div class="quick-card-icon" style="background: linear-gradient(135deg, #7C3AED, #5B21B6);">
+                                <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Style="color:white; font-size:1.6rem;" />
+                            </div>
+                            <MudText Typo="Typo.subtitle2" Class="quick-card-label">Trámites</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="quick-card-sub">Gestión documental</MudText>
+                        </MudPaper>
+                    }
+
+                    <MudPaper Class="quick-card" Elevation="0" @onclick='() => NavManager.NavigateTo("perfil")'>
+                        <div class="quick-card-icon" style="background: linear-gradient(135deg, #059669, #047857);">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Style="color:white; font-size:1.6rem;" />
+                        </div>
+                        <MudText Typo="Typo.subtitle2" Class="quick-card-label">Perfil</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="quick-card-sub">Mi cuenta</MudText>
+                    </MudPaper>
+
+                    @if (_esAdmin)
+                    {
+                        <MudPaper Class="quick-card" Elevation="0" @onclick='() => NavManager.NavigateTo("gestoria/usuarios")'>
+                            <div class="quick-card-icon" style="background: linear-gradient(135deg, #D97706, #B45309);">
+                                <MudIcon Icon="@Icons.Material.Filled.Group" Style="color:white; font-size:1.6rem;" />
+                            </div>
+                            <MudText Typo="Typo.subtitle2" Class="quick-card-label">Usuarios</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="quick-card-sub">Gestión</MudText>
+                        </MudPaper>
+                    }
+
+                </div>
+
+                <MudText Typo="Typo.caption" Class="section-label mt-4">ESTADO</MudText>
+                <MudPaper Elevation="0" Class="status-card">
+                    <div class="status-row">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                        <MudText Typo="Typo.body2" Class="ms-2">Sistema operativo</MudText>
+                        <MudSpacer />
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">Online</MudChip>
+                    </div>
+                    <MudDivider Class="my-2" />
+                    <div class="status-row">
+                        <MudIcon Icon="@Icons.Material.Filled.NotificationsActive" Color="Color.Info" Size="Size.Small" />
+                        <MudText Typo="Typo.body2" Class="ms-2">Notificaciones push</MudText>
+                        <MudSpacer />
+                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">Próximamente</MudChip>
+                    </div>
+                </MudPaper>
+
+                <MudText Typo="Typo.caption" Class="section-label mt-4">PROGRAMA</MudText>
+                <MudPaper Elevation="0" Class="cofradia-program-card cofradia-program-card--mobile">
+                    <img src="imagenes/cartel-pegatinas-santos.png"
+                         alt="Cartel del programa sistema de acceso y gestion"
+                         class="cofradia-program-image" />
+                </MudPaper>
+
+                @* FAB específico del Dashboard *@
+                @*            <MudFab Color="Color.Primary"
+                        Icon="@Icons.Material.Filled.Add"
+                        Class="fixed-fab"
+                        OnClick="AbrirSelectorBarco" /> *@
+
+
+
+
+            </div>
+    @*         @if (_mostrarEditor && _barcoSeleccionado != null)
+            {
+                <div class="mobile-fullscreen-editor__body">
+                    <FormularioTramite Model="@_tramiteActual"
+                                       CodigoBarco="@_barcoSeleccionado?.CodigoBarco.ToString()"
+                                       CodigoEmpresa="@CodigoEmpresa"
+                                       barco="@_barcoSeleccionado"
+                                       OnCancelar="CerrarFormulario"
+                                       OnGuardar="ProcesarGuardado" />
+                </div>
+            } *@
+        </MudHidden>
+
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <HomeDesktop />
+        </MudHidden>
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private bool _esAdmin;
+    private bool _puedeVerTramites;
+    private bool _mostrarEditor;
+    private BarcosDto? _barcoSeleccionado;
+    private BarcosTramitesDto _tramiteActual = new();
+    private string CodigoEmpresa = "";
+
+    private bool _estaInstalada;
+    private bool _puedeInstalar;
+    private bool _estaSuscrito;
+    private string _notificationStatus = "default";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _estaInstalada = await JS.InvokeAsync<bool>("pwaManager.isInstalled");
+            _puedeInstalar = await JS.InvokeAsync<bool>("pwaManager.canInstall");
+            _notificationStatus = await JS.InvokeAsync<string>("notificationManager.getStatus");
+            _estaSuscrito = await JS.InvokeAsync<bool>("notificationManager.isPushActive");
+
+            if (_estaSuscrito && _notificationStatus == "granted")
+            {
+                _estaSuscrito = await SincronizarSuscripcionPushAsync(mostrarMensaje: false);
+            }
+
+            StateHasChanged();
+        }
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var currentUser = authState.User.Identity?.IsAuthenticated == true
+            ? await CurrentUserService.GetCurrentUserAsync(authState.User)
+            : null;
+
+        _puedeVerTramites = currentUser?.TipoUsuario == CRM.Dtos.Enums.TipoUsuarioDto.Administrador
+            || IsAdministradorClaim(authState.User);
+        _esAdmin = authState.User.IsInRole("Administrador") || _puedeVerTramites;
+        _mostrarEditor = false;
+    }
+
+    private static bool IsAdministradorClaim(ClaimsPrincipal user)
+    {
+        var rawTipoUsuario = user.FindFirst("tipo_usuario")?.Value
+            ?? user.FindFirst("TipoUsuario")?.Value;
+
+        return int.TryParse(rawTipoUsuario, out var numericValue)
+            ? numericValue == (int)CRM.Dtos.Enums.TipoUsuarioDto.Administrador
+            : Enum.TryParse<CRM.Dtos.Enums.TipoUsuarioDto>(rawTipoUsuario, true, out var tipoUsuario)
+                && tipoUsuario == CRM.Dtos.Enums.TipoUsuarioDto.Administrador;
+    }
+
+    private string GetFirstName(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "usuario";
+        return fullName.Trim().Split(' ')[0];
+    }
+
+    private Color GetNotificationColor()
+    {
+        if (_estaSuscrito && _notificationStatus == "granted")
+            return Color.Success;
+
+        return _notificationStatus switch
+        {
+            "denied" => Color.Error,
+            "unsupported" => Color.Error,
+            "granted" => Color.Warning,
+            _ => Color.Default
+        };
+    }
+
+    private string GetNotificationIcon()
+    {
+        if (_estaSuscrito && _notificationStatus == "granted")
+            return Icons.Material.Filled.NotificationsActive;
+
+        return _notificationStatus switch
+        {
+            "denied" => Icons.Material.Filled.NotificationsOff,
+            "unsupported" => Icons.Material.Filled.PortableWifiOff,
+            "granted" => Icons.Material.Filled.NotificationImportant,
+            _ => Icons.Material.Filled.NotificationsNone
+        };
+    }
+
+    private string GetNotificationTitle()
+    {
+        if (_estaSuscrito && _notificationStatus == "granted")
+            return "Habilitadas";
+
+        return _notificationStatus switch
+        {
+            "denied" => "Bloqueadas",
+            "unsupported" => "No disponibles",
+            "granted" => "Sin suscripción",
+            _ => "Pendientes"
+        };
+    }
+
+    private string GetNotificationChipText()
+    {
+        if (_estaSuscrito && _notificationStatus == "granted")
+            return "Push activo";
+
+        return _notificationStatus switch
+        {
+            "denied" => "Permiso denegado",
+            "unsupported" => "No soportadas",
+            "granted" => "Activar en perfil",
+            _ => "Configurar"
+        };
+    }
+
+    private async Task InstalarAplicacion()
+    {
+        if (_estaInstalada)
+        {
+            Snackbar.Add("La aplicación ya está instalada.", Severity.Success);
+            return;
+        }
+
+        _puedeInstalar = await JS.InvokeAsync<bool>("pwaManager.canInstall");
+        if (!_puedeInstalar)
+        {
+            Snackbar.Add("Si no aparece el instalador, usa el menú del navegador y pulsa 'Instalar aplicación' o 'Añadir a pantalla de inicio'.", Severity.Info);
+            return;
+        }
+
+        var resultado = await JS.InvokeAsync<string>("pwaManager.triggerInstall");
+        _estaInstalada = await JS.InvokeAsync<bool>("pwaManager.isInstalled");
+        _puedeInstalar = await JS.InvokeAsync<bool>("pwaManager.canInstall");
+
+        Snackbar.Add(
+            resultado == "accepted"
+                ? "Instalación iniciada correctamente."
+                : "Instalación cancelada o no disponible en este momento.",
+            resultado == "accepted" ? Severity.Success : Severity.Info);
+
+        StateHasChanged();
+    }
+
+    private async Task ActivarNotificaciones()
+    {
+        if (_estaSuscrito && _notificationStatus == "granted")
+        {
+            var sincronizada = await SincronizarSuscripcionPushAsync(mostrarMensaje: true);
+            _estaSuscrito = sincronizada;
+            StateHasChanged();
+            return;
+        }
+
+        if (_notificationStatus == "denied")
+        {
+            Snackbar.Add("Las notificaciones están bloqueadas. Actívalas desde los permisos del navegador.", Severity.Warning);
+            return;
+        }
+
+        var permiso = await JS.InvokeAsync<string>("notificationManager.requestPermission");
+        _notificationStatus = permiso;
+
+        if (permiso != "granted")
+        {
+            _estaSuscrito = false;
+            Snackbar.Add("No se han concedido permisos de notificación.", Severity.Info);
+            StateHasChanged();
+            return;
+        }
+
+        _estaSuscrito = await SincronizarSuscripcionPushAsync(mostrarMensaje: true);
+
+        StateHasChanged();
+    }
+
+    private async Task<bool> SincronizarSuscripcionPushAsync(bool mostrarMensaje)
+    {
+        var suscrito = await JS.InvokeAsync<bool>("notificationManager.subscribePush");
+        var detalleError = suscrito
+            ? null
+            : await JS.InvokeAsync<string?>("notificationManager.getLastError");
+
+        if (mostrarMensaje || !suscrito)
+        {
+            Snackbar.Add(
+                suscrito
+                    ? "Notificaciones activadas correctamente."
+                    : string.IsNullOrWhiteSpace(detalleError)
+                        ? "No se pudo completar la suscripción push. Revisa la API y el service worker."
+                        : detalleError,
+                suscrito ? Severity.Success : Severity.Error);
+        }
+
+        return suscrito;
+    }
+
+    private async Task AbrirSelectorBarco()
+    {
+
+
+        _tramiteActual = new BarcosTramitesDto(); // Formulario vacío
+        _mostrarEditor = true;
+   
+        var dialog = await DialogService.ShowAsync<SelectorBarcoDialog>("Seleccionar Embarcación");
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is BarcosDto barcoSeleccionado)
+        {
+            _barcoSeleccionado = barcoSeleccionado;
+            _tramiteActual = new BarcosTramitesDto();
+
+            CodigoEmpresa = _barcoSeleccionado.CodigoEmpresa == null ? "" : _barcoSeleccionado.CodigoEmpresa.ToString();
+
+            // 3. Activamos el formulario
+            _mostrarEditor = true;
+            StateHasChanged();
+        }
+    }
+
+    private void CerrarFormulario() => _mostrarEditor = false;
+
+    private async Task ProcesarGuardado(BarcosTramitesDto tramite)
+    {
+        // Lógica de guardado...
+        _mostrarEditor = false;
+        StateHasChanged();
+    }
+}

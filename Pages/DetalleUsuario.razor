@@ -1,0 +1,224 @@
+@page "/usuario/{UsuarioId:guid}"
+@page "/usuario/nuevo"
+@using CRM.Dtos
+@using CRM.Dtos.Enums
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize]
+
+<PageTitle>@(EsNuevo ? "Nuevo usuario" : "Editar usuario")</PageTitle>
+
+<MudStack Class="usuario-detalle-page">
+    @if (isLoading)
+    {
+        <div class="usuario-detalle-loading">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-3">Cargando usuario...</MudText>
+        </div>
+    }
+    else
+    {
+        <MudPaper Elevation="0" Class="usuario-detalle-hero pa-4">
+            <div class="usuario-detalle-hero__copy">
+                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">
+                    @(EsNuevo ? "Alta de usuario" : "Edicion de usuario")
+                </MudChip>
+                <MudText Typo="Typo.h4" Class="usuario-detalle-hero__title d-none d-md-block">
+                    @(EsNuevo ? "Nuevo usuario" : NombrePantalla)
+                </MudText>
+                <MudText Typo="Typo.h5" Class="usuario-detalle-hero__title d-md-none">
+                    @(EsNuevo ? "Nuevo usuario" : "Editar usuario")
+                </MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="usuario-detalle-hero__subtitle">
+                    @(EsNuevo
+                        ? "Completa los datos del perfil. La contrasena se restablece desde el enlace de recuperacion del login."
+                        : "Modifica los datos del usuario y guarda los cambios.")
+                </MudText>
+            </div>
+
+            <div class="usuario-detalle-hero__actions">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Default"
+                           StartIcon="@Icons.Material.Filled.ArrowBack"
+                           Class="usuario-detalle-btn"
+                           OnClick="Volver">
+                    Volver
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Save"
+                           Class="usuario-detalle-btn usuario-detalle-btn--primary"
+                           OnClick="GuardarUsuario"
+                           Disabled="@guardando">
+                    @(guardando ? "Guardando..." : "Guardar")
+                </MudButton>
+            </div>
+        </MudPaper>
+
+        <MudText Typo="Typo.caption" Class="section-label mt-4">DATOS DEL USUARIO</MudText>
+
+        <MudPaper Elevation="0" Class="usuario-detalle-panel">
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Dense="true" Class="mb-4">
+                    @errorMessage
+                </MudAlert>
+            }
+
+            <MudForm Model="@usuario" @ref="form" Class="pa-4">
+                <MudGrid Spacing="4" Class="usuario-detalle-form-grid">
+                    <MudItem xs="12" md="6">
+                        <MudStack Spacing="3" Class="usuario-detalle-column">
+                            <div class="usuario-detalle-section">
+                                <MudIcon Icon="@Icons.Material.Filled.AlternateEmail" Size="Size.Small" />
+                                <span>Datos de contacto</span>
+                            </div>
+
+                            <MudTextField @bind-Value="usuario.Nombre"
+                                          Label="Nombre"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          For="@(() => usuario.Nombre)"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.Person" />
+
+                            <MudTextField @bind-Value="usuario.Apellidos"
+                                          Label="Apellidos"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          For="@(() => usuario.Apellidos)"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.Badge" />
+
+                            <div>
+                                <MudTextField @bind-Value="usuario.NIFAcceso"
+                                              Label="NIF / DNI *"
+                                              Variant="Variant.Outlined"
+                                              Margin="Margin.Dense"
+                                              Required="true"
+                                              For="@(() => usuario.NIFAcceso)"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.Badge"
+                                              Disabled="@(!EsNuevo)" />
+                                @if (!EsNuevo)
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">El NIF no se puede cambiar una vez creado.</MudText>
+                                }
+                            </div>
+
+                            <MudTextField @bind-Value="usuario.NombreUsuario"
+                                          Label="Nombre de usuario"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.AccountCircle"
+                                          HelperText="Si se deja vacio, se generara a partir del email." />
+
+                            <MudTextField @bind-Value="usuario.EMail"
+                                          Label="Email *"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Required="true"
+                                          For="@(() => usuario.EMail)"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.Email"
+                                          InputType="InputType.Email" />
+
+                            <MudTextField @bind-Value="usuario.EMailAvisos"
+                                          Label="Email avisos"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.NotificationsActive"
+                                          InputType="InputType.Email"
+                                          HelperText="Si se deja vacio, se usara el email principal." />
+                        </MudStack>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudStack Spacing="3" Class="usuario-detalle-column">
+                            <div class="usuario-detalle-section usuario-detalle-section--security">
+                                <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Small" />
+                                <span>Seguridad y roles</span>
+                            </div>
+
+                            <MudSelect T="TipoUsuarioDto"
+                                       Label="Tipo de usuario"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Dense"
+                                       @bind-Value="usuario.TipoUsuario"
+                                       Disabled="@EsEmpresaLimitada">
+                                @foreach (TipoUsuarioDto tipo in Enum.GetValues(typeof(TipoUsuarioDto)))
+                                {
+                                    <MudSelectItem Value="@tipo">@tipo</MudSelectItem>
+                                }
+                            </MudSelect>
+                            @if (EsEmpresaLimitada)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">La empresa solo puede darse de alta como tipo Empresa.</MudText>
+                            }
+
+                            <MudSelect T="string"
+                                       Label="Rol"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Dense"
+                                       @bind-Value="usuario.Rol">
+                                <MudSelectItem Value="@("Cliente")">Cliente</MudSelectItem>
+                                <MudSelectItem Value="@("Administrador")">Administrador</MudSelectItem>
+                                <MudSelectItem Value="@("Asistente")">Asistente</MudSelectItem>
+                                <MudSelectItem Value="@("Gestoria")">Gestoria</MudSelectItem>
+                            </MudSelect>
+
+                            <MudSelect T="string"
+                                       Label="Empresa"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Dense"
+                                       @bind-Value="usuario.CodigoEmpresa"
+                                       Disabled="@EsEmpresaLimitada">
+                                <MudSelectItem Value="@(string.Empty)">Sin empresa asignada</MudSelectItem>
+                                @foreach (var empresa in empresas)
+                                {
+                                    <MudSelectItem Value="@empresa.CodigoEmpresa">@empresa.NombreB - @empresa.NombreArmador</MudSelectItem>
+                                }
+                            </MudSelect>
+
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Class="usuario-detalle-switch">
+                                <MudSwitch T="bool" @bind-Value="usuario.Activo" Color="Color.Primary" />
+                                <div>
+                                    <MudText Typo="Typo.body2">Usuario activo</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Permite el acceso a la aplicacion.</MudText>
+                                </div>
+                            </MudStack>
+
+                            <div class="usuario-detalle-password-note">
+                                <MudIcon Icon="@Icons.Material.Filled.LockReset" Size="Size.Small" />
+                                <MudText Typo="Typo.body2">
+                                    La contrasena no se gestiona desde esta ficha. El usuario podra restablecerla desde el enlace de recuperacion de la pantalla de login.
+                                </MudText>
+                            </div>
+                        </MudStack>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudStack Row="true" Spacing="2" Class="usuario-detalle-actions-mobile d-md-none">
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Default"
+                                       StartIcon="@Icons.Material.Filled.ArrowBack"
+                                       FullWidth="true"
+                                       OnClick="Volver">
+                                Volver
+                            </MudButton>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Save"
+                                       FullWidth="true"
+                                       OnClick="GuardarUsuario"
+                                       Disabled="@guardando">
+                                @(guardando ? "Guardando..." : "Guardar")
+                            </MudButton>
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        </MudPaper>
+    }
+</MudStack>

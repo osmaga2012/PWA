@@ -1,0 +1,17 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudAutocomplete T="BarcosDto"
+                         Label="Selecciona el barco"
+                         @bind-Value="barcoSeleccionado"
+                         SearchFunc="@BuscarBarcos"
+                         ToStringFunc="@(b => b==null ? "" : b.NombreB)"
+                         Clearable="true"
+                         Required="true" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Color="Color.Primary"
+                   Disabled="@(barcoSeleccionado == null)"
+                   OnClick="Aceptar">Continuar</MudButton>
+    </DialogActions>
+</MudDialog>

@@ -1,0 +1,235 @@
+@page "/perfil"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using PWA.Interfaces
+@inject IAuthService AuthService
+@inject NavigationManager NavManager
+@inject ICurrentUserService CurrentUserService
+@inject IHttpClientFactory HttpClientFactory
+@inject ISnackbar Snackbar
+
+<PageTitle>Mi Perfil - CRM</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="perfil-page">
+
+            <div class="perfil-hero">
+                <MudAvatar Color="Color.Primary" Size="Size.Large" Class="perfil-avatar">
+                    @GetInitials(context.User.Identity?.Name)
+                </MudAvatar>
+                <MudText Typo="Typo.h6" Class="perfil-name mt-2">
+                    @context.User.Identity?.Name
+                </MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined" Class="mt-1">
+                    @(context.User.FindFirst(ClaimTypes.Role)?.Value ?? "Usuario")
+                </MudChip>
+            </div>
+
+            <MudText Typo="Typo.caption" Class="section-label mt-4">MI CUENTA</MudText>
+            <MudPaper Elevation="0" Class="perfil-section">
+
+                <div class="perfil-info-row">
+                    <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Primary" Size="Size.Small" />
+                    <div class="ms-3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Nombre</MudText>
+                        <MudText Typo="Typo.body2" Class="fw-bold">@context.User.Identity?.Name</MudText>
+                    </div>
+                </div>
+
+                <MudDivider Class="my-2" />
+
+                <div class="perfil-info-row">
+                    <MudIcon Icon="@Icons.Material.Filled.Email" Color="Color.Primary" Size="Size.Small" />
+                    <div class="ms-3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Email</MudText>
+                        <MudText Typo="Typo.body2" Class="fw-bold">
+                            @(context.User.FindFirst(ClaimTypes.Email)?.Value ?? "—")
+                        </MudText>
+                    </div>
+                </div>
+
+                <MudDivider Class="my-2" />
+
+                <div class="perfil-info-row">
+                    <MudIcon Icon="@Icons.Material.Filled.Badge" Color="Color.Primary" Size="Size.Small" />
+                    <div class="ms-3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">ID de usuario</MudText>
+                        <MudText Typo="Typo.body2" Class="fw-bold">
+                            @(context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "—")
+                        </MudText>
+                    </div>
+                </div>
+
+            </MudPaper>
+
+            <MudText Typo="Typo.caption" Class="section-label mt-4">AJUSTES</MudText>
+            <MudPaper Elevation="0" Class="perfil-section">
+
+                <MudListItem T="string" Icon="@Icons.Material.Filled.Notifications"
+                             IconColor="@(_estaSuscrito ? Color.Success : Color.Default)"
+                             Class="perfil-action-row">
+                    <div class="d-flex align-center w-100">
+                        <MudText Typo="Typo.body2">Notificaciones push</MudText>
+
+                        <MudSwitch T="bool"
+                                   Value="@_estaSuscrito"
+                                   ValueChanged="OnSwitchChanged"
+                                   Color="Color.Primary"
+                                   Label="@(_estaSuscrito ? "Activadas" : "Desactivadas")"
+                                   Class="ms-auto" />
+                    </div>
+                </MudListItem>
+
+                @if (_estaSuscrito)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.NotificationsActive"
+                               Class="mt-3"
+                               OnClick="EnviarPushDePrueba">
+                        Enviar push de prueba
+                    </MudButton>
+                    @if (!string.IsNullOrWhiteSpace(_pushTestStatus))
+                    {
+                        <MudText Typo="Typo.caption" Class="mt-2">
+                            @_pushTestStatus
+                        </MudText>
+                    }
+                }
+
+                <MudDivider />
+
+                <MudListItem T="string" Icon="@Icons.Material.Filled.Security"
+                             IconColor="Color.Default"
+                             OnClick='() => NavManager.NavigateTo("seguridad")'
+                             Class="perfil-action-row">
+                    <MudText Typo="Typo.body2">Seguridad</MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Class="ms-auto" Color="Color.Secondary" Size="Size.Small" />
+                </MudListItem>
+
+            </MudPaper>
+
+            <div class="perfil-logout-section">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Error"
+                           StartIcon="@Icons.Material.Filled.Logout"
+                           FullWidth="true"
+                           Size="Size.Large"
+                           Class="perfil-logout-btn"
+                           OnClick="@HandleLogout">
+                    Cerrar Sesión
+                </MudButton>
+            </div>
+
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private bool _estaSuscrito;
+    private string? _pushTestStatus;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Al entrar, le preguntamos al navegador si este SW ya tiene suscripción activa
+        _estaSuscrito = await JS.InvokeAsync<bool>("notificationManager.isPushActive");
+
+        if (_estaSuscrito)
+        {
+            await SincronizarSuscripcionPushAsync(mostrarMensaje: false);
+        }
+    }
+
+    private async Task HandleLogout()
+    {
+        await AuthService.LogoutAsync();
+        NavManager.NavigateTo("login", forceLoad: true);
+    }
+
+    private string GetInitials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{parts[0][0]}{parts[1][0]}".ToUpper()
+            : name.Substring(0, Math.Min(2, name.Length)).ToUpper();
+    }
+
+    private async Task OnSwitchChanged(bool value)
+    {
+        if (value)
+        {
+            await ActivarNotificaciones();
+        }
+        else
+        {
+            await DesactivarNotificaciones();
+        }
+    }
+
+    private async Task ActivarNotificaciones()
+    {
+        var permiso = await JS.InvokeAsync<string>("notificationManager.requestPermission");
+
+        if (permiso == "granted")
+        {
+            var suscrito = await SincronizarSuscripcionPushAsync(mostrarMensaje: true);
+            _estaSuscrito = suscrito;
+        }
+        else
+        {
+            _estaSuscrito = false;
+            _pushTestStatus = "No se han concedido permisos de notificación.";
+            Snackbar.Add(_pushTestStatus, Severity.Info);
+        }
+        StateHasChanged();
+    }
+
+    private async Task<bool> SincronizarSuscripcionPushAsync(bool mostrarMensaje)
+    {
+        var suscrito = await JS.InvokeAsync<bool>("notificationManager.subscribePush");
+        _pushTestStatus = suscrito
+            ? "Notificaciones activadas correctamente."
+            : await JS.InvokeAsync<string?>("notificationManager.getLastError")
+                ?? "No se pudo completar la suscripción push.";
+
+        if (mostrarMensaje || !suscrito)
+        {
+            Snackbar.Add(_pushTestStatus, suscrito ? Severity.Success : Severity.Error);
+        }
+
+        return suscrito;
+    }
+
+    private async Task DesactivarNotificaciones()
+    {
+        var desuscrito = await JS.InvokeAsync<bool>("notificationManager.resetPush");
+        _estaSuscrito = !desuscrito;
+        StateHasChanged();
+    }
+
+    private async Task EnviarPushDePrueba()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("ApiClient");
+            var response = await client.PostAsync("api/push/test", null);
+
+            _pushTestStatus = response.IsSuccessStatusCode
+                ? "Push de prueba enviada. Deberías ver la notificación en el navegador."
+                : $"No se pudo enviar la push de prueba: {response.ReasonPhrase}";
+        }
+        catch (Exception ex)
+        {
+            _pushTestStatus = $"Error al enviar la push de prueba: {ex.Message}";
+        }
+
+        StateHasChanged();
+    }
+}

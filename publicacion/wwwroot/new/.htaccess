@@ -1,0 +1,29 @@
+Options -MultiViews
+RewriteEngine On
+RewriteBase /new/
+
+# Never rewrite existing files or directories. This keeps Blazor assets from
+# being replaced by index.html, which breaks browser integrity checks.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# SPA fallback for client-side routes such as /new/login or /new/activar/{token}.
+RewriteRule ^ index.html [L]
+
+<IfModule mod_mime.c>
+  AddType application/wasm .wasm
+  AddType application/javascript .js
+  AddType application/json .json
+  AddType text/css .css
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(wasm|js|css|dat|dll|pdb)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  <FilesMatch "^(index\.html|service-worker\.js|service-worker-assets\.js)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+</IfModule>

@@ -1,0 +1,148 @@
+﻿@using CRM.Dtos
+@using Microsoft.AspNetCore.Components.Authorization
+@using MudBlazor
+@using PWA.Interfaces
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ICurrentUserService CurrentUserService
+@inject IAuthService AuthService
+
+<MudDrawer Open="DrawerOpen"
+           OpenChanged="EventCallback.Factory.Create<bool>(this, (val) => {} /* Evita cierre automático */)"
+           Variant="DrawerVariant.Mini"
+           Elevation="1"
+           Class="sidebar-floating"
+           Style="background-color: #FFFFFF !important; border-right: 1px solid #E2E8F0; top: 70px !important; height: calc(100vh - 70px) !important; position: absolute; overflow: hidden !important;">
+
+    <MudNavMenu Bordered="false" Class="px-2">
+        <div class="menu-label-pills">@(DrawerOpen ? "PRINCIPAL" : "")</div>
+        <MudNavLink Match="NavLinkMatch.All" Href=""
+                    Icon="@Icons.Material.Filled.GridView"
+                    Class="@(ActiveTab == 0 ? "pill-link active" : "pill-link")">Panel</MudNavLink>
+        <MudNavLink Match="NavLinkMatch.Prefix"
+                    Icon="@Icons.Material.Filled.DirectionsBoat"
+                    Href="barcos" Class="@(ActiveTab == 1 ? "pill-link active" : "pill-link")">Flota</MudNavLink>
+
+        <div class="menu-label-pills mt-4">@(DrawerOpen ? "GESTIÓN" : "")</div>
+        <MudNavLink Match="NavLinkMatch.Prefix"
+                    Icon="@Icons.Material.Filled.ReceiptLong"
+                    Href="tramites"
+                    Class="@(ActiveTab == 2 ? "pill-link active" : "pill-link")">Trámites</MudNavLink>
+
+        @if (currentUser?.TipoUsuario == CRM.Dtos.Enums.TipoUsuarioDto.Administrador)
+        {
+
+            <MudNavLink Match="NavLinkMatch.Prefix"
+                        Icon="@Icons.Material.Filled.VerifiedUser"
+                        Href="gestoria/usuarios"
+                        Class="@(ActiveTab == 3 ? "pill-link active" : "pill-link")">Usuarios</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.Prefix"
+                        Icon="@Icons.Material.Filled.Person"
+                        Href="perfil"
+                        Class="@(ActiveTab == 4 ? "pill-link active" : "pill-link")">Perfil</MudNavLink>
+
+            <div class="menu-label-pills mt-4">@(DrawerOpen ? "AJUSTES" : "")</div>
+            <MudNavLink Match="NavLinkMatch.Prefix"
+                        Icon="@Icons.Material.Filled.Settings"
+                        Href="configuracion"
+                        Class="@(ActiveTab == 4 ? "pill-link active" : "pill-link")">Configuración</MudNavLink>
+        }
+    </MudNavMenu>
+
+    
+@*     <div class="d-flex flex-column h-100 justify-content-between py-4" style="width: 100%; overflow: hidden;">
+        <MudNavMenu Bordered="false" Class="px-2">
+            <div class="menu-label-pills">@(DrawerOpen ? "PRINCIPAL" : "")</div>
+            <MudNavLink Match="NavLinkMatch.All" Href=""
+                        Icon="@Icons.Material.Filled.GridView"  
+                        Class="@(ActiveTab == 0 ? "pill-link active" : "pill-link")">Panel</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.Prefix" 
+                        Icon="@Icons.Material.Filled.DirectionsBoat" 
+                        Href="barcos" Class="@(ActiveTab == 1 ? "pill-link active" : "pill-link")">Flota</MudNavLink>
+            
+            <div class="menu-label-pills mt-4">@(DrawerOpen ? "GESTIÓN" : "")</div>
+            <MudNavLink Match="NavLinkMatch.Prefix" 
+                        Icon="@Icons.Material.Filled.ReceiptLong" 
+                        Href="tramites" 
+                        Class="@(ActiveTab == 2 ? "pill-link active" : "pill-link")">Trámites</MudNavLink>
+                    
+            @if (currentUser?.TipoUsuario == CRM.Dtos.Enums.TipoUsuarioDto.Administrador)
+            {
+
+                <MudNavLink Match="NavLinkMatch.Prefix" 
+                        Icon="@Icons.Material.Filled.VerifiedUser" 
+                        Href="gestoria/usuarios"
+                        Class="@(ActiveTab == 3 ? "pill-link active" : "pill-link")">Usuarios</MudNavLink>
+                                    <MudNavLink Match="NavLinkMatch.Prefix" 
+                        Icon="@Icons.Material.Filled.Person" 
+                        Href="perfil"
+                        Class="@(ActiveTab == 4 ? "pill-link active" : "pill-link")">Perfil</MudNavLink> 
+            
+                        <div class="menu-label-pills mt-4">@(DrawerOpen ? "AJUSTES" : "")</div>
+                        <MudNavLink Match="NavLinkMatch.Prefix" 
+                                    Icon="@Icons.Material.Filled.Settings" 
+                                    Href="configuracion"
+                                    Class="@(ActiveTab == 4 ? "pill-link active" : "pill-link")">Configuración</MudNavLink>
+            }
+        </MudNavMenu>
+
+@*         <div class="px-2 w-100">
+            <div class="d-flex align-items-center justify-content-center p-2" style="border: 1px solid #E2E8F0; background-color: #F8FAFC; border-radius: 12px; min-height: 44px;">
+                <MudIcon Icon="@Icons.Material.Filled.Anchor" Style="color: #0284C7; min-width: 24px;" />
+                @if (DrawerOpen)
+                {
+                    <MudTooltip Text="@displayName" Delay="200">
+                        <div class="ms-3 overflow-hidden">
+                            <MudText Typo="Typo.caption"
+                                     Class="fw-bold d-block text-truncate"
+                                     Style="color: #1E293B;"
+                                     title="@displayName"
+                                     aria-label="@displayName">
+                                @displayName
+                            </MudText>
+                        </div>
+                    </MudTooltip>
+                }
+            </div>
+        </div> *@
+   @* </div> *@
+</MudDrawer>
+
+@code {
+    [Parameter] public bool DrawerOpen { get; set; }
+    [Parameter] public int ActiveTab { get; set; }
+    [Parameter] public EventCallback<int> OnSelectTab { get; set; }
+    [Parameter] public string? CompanyName { get; set; }
+
+    
+    private UsuarioDto? currentUser;
+
+
+    private string displayName => string.IsNullOrWhiteSpace(CompanyName) ? "Lonja Altea" : CompanyName!;
+
+    private async Task CambiarTab(int index)
+    {
+        await OnSelectTab.InvokeAsync(index);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                currentUser = await CurrentUserService.GetCurrentUserAsync(user);
+                if (currentUser != null)
+                {
+
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al obtener el usuario actual: {ex.Message}");
+        }
+    }
+}

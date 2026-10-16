@@ -1,0 +1,413 @@
+﻿@inject HttpClient Http
+
+
+@if (_mostrarEditor && _barcoSeleccionado is not null)
+{
+    <MudGrid Class="pa-4" Justify="Justify.Center">
+        <MudItem xs="12" md="10" lg="8">
+            <FormularioTramite @key="_barcoSeleccionado.CodigoBarco"
+                               Model="@_tramiteActual"
+                               CodigoBarco="@_barcoSeleccionado.CodigoBarco.ToString()"
+                               CodigoEmpresa="@_codigoEmpresa"
+                               barco="@_barcoSeleccionado"
+                               IsEditMode="false"
+                               OnCancelar="CerrarFormulario"
+                               OnGuardar="ProcesarGuardado" />
+        </MudItem>
+    </MudGrid>
+}
+else
+{
+<MudGrid Class="pa-4">
+    <MudItem xs="12" lg="8">
+        <MudCard Outlined="true" Class="pa-6 mb-4">
+            <MudText Typo="Typo.h6" Class="mb-4">Gestión Operativa</MudText>
+            <MudGrid>
+                <MudItem xs="4">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" OnClick="AbrirSelectorBarco">
+                        Nuevo Trámite
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="4">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" FullWidth="true" OnClick='() => NavManager.NavigateTo("barcos")'>
+                        Ver Flota
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="4">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" OnClick='() => NavManager.NavigateTo("configuracion")'>
+                        Configuración
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudCard>
+
+        <MudCard Outlined="true" Class="pa-6">
+            <MudText Typo="Typo.h6" Class="mb-4">Trámites en curso</MudText>
+
+            @if (tramitesActivos == null)
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+            }
+            else if (!tramitesActivos.Any())
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">No hay procesos activos en este momento.</MudText>
+            }
+            else
+            {
+                <MudTable T="BarcosTramitesDto" Items="@tramitesActivos"
+                          Hover="true" Breakpoint="Breakpoint.Sm"
+                          Loading="@esCargando"
+                          LoadingProgressColor="Color.Info">
+                    <HeaderContent>
+                        <MudTh>Certificado</MudTh>
+                        <MudTh>Estado</MudTh>
+                        <MudTh>Inicio</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Certificado">@context.Certificado</MudTd>
+                        <MudTd DataLabel="Estado">
+                            @* Accedemos directamente a la propiedad. Si es int/enum, el método GetColorEstado debe recibir ese tipo *@
+                            <MudChip T="string" Color="@GetColorEstado(context.Estado.Value)" Size="Size.Small">
+                                @GetTextoEstado(context.Estado.Value)
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Inicio">
+                            @* Usamos la interpolación de cadenas para evitar el error de delegados *@
+                            @(context.FechaFin.ToString("dd/MM/yyyy") ?? "N/A")
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+
+        </MudCard>
+
+        <MudCard Outlined="true" Class="pa-6">
+            <MudText Typo="Typo.h6" Class="mb-4">Trámites próximos a vencer</MudText>
+
+            @if (vencimientoProximo == null)
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+            }
+            else if (!vencimientoProximo.Any())
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">No hay procesos activos en este momento.</MudText>
+            }
+            else
+            {
+                <MudTable T="BarcosTramitesDto" Items="@vencimientoProximo"
+                          Hover="true" Breakpoint="Breakpoint.Sm"
+                          Loading="@esCargando"
+                          LoadingProgressColor="Color.Info">
+                    <HeaderContent>
+                        <MudTh>Certificado</MudTh>
+                        <MudTh>Estado</MudTh>
+                        <MudTh>Inicio</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Certificado">@context.Certificado</MudTd>
+                        <MudTd DataLabel="Estado">
+                            @* Accedemos directamente a la propiedad. Si es int/enum, el método GetColorEstado debe recibir ese tipo *@
+                            <MudChip T="string" Color="@GetColorEstado(context.Estado.Value)" Size="Size.Small">
+                                @GetTextoEstado(context.Estado.Value)
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Inicio">
+                            @* Usamos la interpolación de cadenas para evitar el error de delegados *@
+                            @(context.FechaFin.ToString("dd/MM/yyyy") ?? "N/A")
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+
+        </MudCard>
+
+        <MudCard Outlined="true" Class="pa-6">
+            <MudText Typo="Typo.h6" Class="mb-4">Trámites finalizados</MudText>
+
+            @if (finalizados == null)
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+            }
+            else if (!finalizados.Any())
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">No hay procesos activos en este momento.</MudText>
+            }
+            else
+            {
+                <MudTable T="BarcosTramitesDto" Items="@finalizados"
+                          Hover="true" Breakpoint="Breakpoint.Sm"
+                          Loading="@esCargando"
+                          LoadingProgressColor="Color.Info">
+                    <HeaderContent>
+                        <MudTh>Certificado</MudTh>
+                        <MudTh>Estado</MudTh>
+                        <MudTh>Inicio</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Certificado">@context.Certificado</MudTd>
+                        <MudTd DataLabel="Estado">
+                            @* Accedemos directamente a la propiedad. Si es int/enum, el método GetColorEstado debe recibir ese tipo *@
+                            <MudChip T="string" Color="@GetColorEstado(context.Estado.Value)" Size="Size.Small">
+                                @GetTextoEstado(context.Estado.Value)
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Inicio">
+                            @* Usamos la interpolación de cadenas para evitar el error de delegados *@
+                            @(context.FechaFin.ToString("dd/MM/yyyy") ?? "N/A")
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" lg="4">
+        <MudCard Outlined="true" Class="pa-6 mb-4">
+            <MudText Typo="Typo.h6" Class="mb-2">Estado del Sistema</MudText>
+            <MudList T="string" >
+                 
+                @if (_estaInstalada)
+                {
+                    <MudListItem>
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Class="mr-2" />
+                        Sistema instalado correctamente
+                    </MudListItem>
+                }
+                else
+                {
+                    <MudListItem OnClick="InstalarAplicación">
+                        <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Class="mr-2" />
+                        Sistema no instalado
+                    </MudListItem>
+                }
+                <MudChip T="string" Color="@(_estaSuscrito ? Color.Success : Color.Error)">
+                    Push: @(_estaSuscrito ? "Activo" : "Ir a perfil para activar")
+                </MudChip>
+                <MudListItem OnClick="VerificarEstado" Text="@($"Servidor: {statusServidor}")"
+                             Icon="@(statusServidor == "Online" ? Icons.Material.Filled.CloudDone : Icons.Material.Filled.CloudOff)" />
+                <MudListItem Text="Base de datos: Proximamente" Icon="@Icons.Material.Filled.Sync" />
+                <MudListItem Text="Versión: 1.0.0" Icon="@Icons.Material.Filled.Info" />
+            </MudList>
+        </MudCard>
+
+        <MudHidden>
+            <MudCard Outlined="true" Class="pa-6 mb-4">
+            <MudText Typo="Typo.h6" Class="mb-2">Normativa reciente</MudText>
+
+
+            @if (noticias == null)
+            {
+                <MudSkeleton Animation="Animation.Wave" Height="50px" Class="my-2" />
+                <MudSkeleton Animation="Animation.Wave" Height="50px" Class="my-2" />
+            }
+            else
+            {
+                <MudStack Spacing="3">
+                    @foreach (var noticia in noticias)
+                    {
+                        <MudAlert Severity="Severity.Info"
+                                  Variant="Variant.Outlined"
+                                  Dense="true"
+                                  Class="cursor-pointer transition-all hover-shadow"
+                                  @onclick="() => AbrirLink(noticia.Link)">
+                            @noticia.Titulo
+                        </MudAlert>
+                    }
+                </MudStack>
+            }
+        </MudCard>
+        </MudHidden>
+        <MudCard Outlined="true" Class="cofradia-program-card cofradia-program-card--desktop">
+            <MudText Typo="Typo.caption" Class="cofradia-program-title">
+                Programa
+            </MudText>
+            <img src="imagenes/cartel-pegatinas-santos.png"
+                 alt="Cartel del programa sistema de acceso y gestion"
+                 class="cofradia-program-image" />
+        </MudCard>
+    </MudItem>
+</MudGrid>
+}
+
+@code {
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private NavigationManager NavManager { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IApiClient<BarcosTramitesDto> tramitesBarcosService { get; set; } = default!;  
+
+    private bool _mostrarEditor;
+    private BarcosDto? _barcoSeleccionado;
+    private BarcosTramitesDto _tramiteActual = new();
+    private string _codigoEmpresa = string.Empty;
+
+    private List<NoticiaDto>? noticias;
+    private List<BarcosTramitesDto>? todosTramites;
+    private List<BarcosTramitesDto>? finalizados;
+    private List<BarcosTramitesDto>? tramitesActivos;
+    private List<BarcosTramitesDto>? vencimientoProximo;
+
+
+    private bool esCargando = false;
+    private Color ColorEstado = Color.Default;
+    private string IconoEstado = Icons.Material.Filled.Help;
+
+    private string statusServidor = "Comprobando...";
+    private bool _estaInstalada;
+    private bool _estaSuscrito;
+    private string _status;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Task.Delay(200);
+            _estaInstalada = await JS.InvokeAsync<bool>("pwaManager.isInstalled");
+
+            // 1. Miramos si el usuario aceptó recibir notificaciones
+            _status = await JS.InvokeAsync<string>("notificationManager.getStatus");
+
+            // 2. Miramos si el navegador ya completó el proceso técnico de suscripción Push
+            _estaSuscrito = await JS.InvokeAsync<bool>("notificationManager.isPushActive");
+
+
+            StateHasChanged();
+        }
+
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await ObtenerTramitesBarcos();
+            await VerificarEstado();
+
+            // Ajusta la URL según la ruta de tu API
+            noticias = await Http.GetFromJsonAsync<List<NoticiaDto>>("/api/noticias");
+        }
+        catch
+        {
+            noticias = new List<NoticiaDto> {
+                new NoticiaDto { Titulo = "No hay noticias disponibles actualmente.", Link = "#" }
+            };
+        }
+
+    }
+
+    private async Task ObtenerTramitesBarcos()
+    {
+
+        todosTramites = (await tramitesBarcosService.GetAllAsync("api/BarcosTramites")).ToList();
+
+        tramitesActivos = todosTramites
+            .Where(f=>f.FechaFin > DateOnly.FromDateTime(DateTime.Now))
+            .OrderByDescending(f=>f.FechaFin)
+            .Take(10)
+            .ToList(); //Http.GetFromJsonAsync<List<BarcosTramitesDto>>("api/tramites/activos");
+
+        vencimientoProximo = todosTramites
+            .Where(f => f.FechaFin <= DateOnly.FromDateTime(DateTime.Now.AddDays(30)) && f.FechaFin > DateOnly.FromDateTime(DateTime.Now))
+            .OrderBy(f => f.FechaFin)
+            .Take(10)
+            .ToList();
+
+        finalizados = todosTramites
+            .Where(f => f.FechaFin <= DateOnly.FromDateTime(DateTime.Now))
+            .OrderByDescending(f => f.FechaFin)
+            .Take(10)
+            .ToList();
+
+
+        StateHasChanged();
+    }
+
+    private async Task VerificarEstado()
+    {
+        esCargando = true;
+        statusServidor = "Comprobando...";
+        StateHasChanged();
+
+        try
+        {
+            // Ajusta "api/health" a la ruta real de tu endpoint
+            var response = await Http.GetAsync("health");
+
+            if (response.IsSuccessStatusCode)
+            {
+                statusServidor = "Online";
+                ColorEstado = Color.Success;
+                IconoEstado = Icons.Material.Filled.CloudDone;
+            }
+            else
+            {
+                throw new Exception();
+            }
+        }
+        catch
+        {
+            statusServidor = "Offline";
+            ColorEstado = Color.Error;
+            IconoEstado = Icons.Material.Filled.CloudOff;
+        }
+        finally
+        {
+            esCargando = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task InstalarAplicación()
+    {
+        var resultado = await JS.InvokeAsync<string>("pwaManager.triggerInstall");
+        if (resultado == "accepted")
+        {
+            // Opcional: Mostrar un mensaje de éxito
+            _estaInstalada = true;
+        }
+    }
+    private Color GetColorEstado(int estado) => estado switch
+    {
+        0 => Color.Warning,
+        2 => Color.Info,
+        _ => Color.Default
+    };
+
+    private string GetTextoEstado(int estado) => estado.ToString();
+
+    private async Task AbrirLink(string url)
+    {
+        if (url != "#") await JS.InvokeVoidAsync("open", url, "_blank");
+    }
+
+    private async Task AbrirSelectorBarco()
+    {
+        var dialog = await DialogService.ShowAsync<SelectorBarcoDialog>("Seleccionar Embarcación");
+        var result = await dialog.Result;
+
+        if (result is null || result.Canceled || result.Data is not BarcosDto barcoSeleccionado)
+        {
+            return;
+        }
+
+        _barcoSeleccionado = barcoSeleccionado;
+        _tramiteActual = new BarcosTramitesDto();
+        _codigoEmpresa = barcoSeleccionado.CodigoEmpresa ?? string.Empty;
+        _mostrarEditor = true;
+    }
+
+    private void CerrarFormulario()
+    {
+        _mostrarEditor = false;
+        _barcoSeleccionado = null;
+        _tramiteActual = new BarcosTramitesDto();
+        _codigoEmpresa = string.Empty;
+    }
+
+    private async Task ProcesarGuardado(BarcosTramitesDto tramite)
+    {
+        CerrarFormulario();
+        await ObtenerTramitesBarcos();
+    }
+}

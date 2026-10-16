@@ -1,0 +1,117 @@
+@using CRM.Dtos
+
+<MudCard Outlined="true" Class="pa-4 mobile-flush-card">
+    <div class="d-flex justify-space-between align-center mb-3">
+        <div>
+            <MudText Typo="Typo.h6">Trámites masivos</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                @FilteredTramites.Count() visibles
+            </MudText>
+        </div>
+
+        <MudButton Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Color="Color.Primary"
+                   Size="Size.Small"
+                   OnClick="CrearNuevo">
+            <MudHidden Breakpoint="Breakpoint.Xs">Nuevo</MudHidden>
+        </MudButton>
+    </div>
+
+    <MudTextField @bind-Value="SearchString"
+                  Placeholder="Buscar trámite..."
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search"
+                  Clearable="true"
+                  Immediate="true"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  Class="mb-3" />
+
+    <MudHidden Breakpoint="Breakpoint.MdAndUp">
+        @if (IsLoading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        }
+        else if (!FilteredTramites.Any())
+        {
+            <div class="mobile-empty-state">
+                <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" />
+                <MudText Typo="Typo.body1" Class="fw-bold">Sin trámites</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Prueba con otra búsqueda o crea uno nuevo.</MudText>
+            </div>
+        }
+        else
+        {
+            <MudStack Spacing="2">
+                @foreach (var tramite in FilteredTramites)
+                {
+                    <MudPaper Elevation="0"
+                              Class="mobile-data-card mobile-data-card--button"
+                              @onclick="() => OnItemChanged(tramite)">
+                        <div class="mobile-data-card__header">
+                            <div>
+                                <MudText Typo="Typo.subtitle2" Class="fw-bold">@tramite.NombreTramite</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Código: @tramite.Codigo</MudText>
+                            </div>
+                            <MudChip T="string" Color="@GetColorEstado(tramite.Estado)" Size="Size.Small">
+                                @GetTextoEstado(tramite.Estado)
+                            </MudChip>
+                        </div>
+
+                        <div class="mobile-data-card__meta">
+                            <span>Inicio: @FormatDate(tramite.FechaInicio)</span>
+                            <span>Fin: @FormatDate(tramite.FechaFin)</span>
+                        </div>
+                    </MudPaper>
+                }
+            </MudStack>
+        }
+    </MudHidden>
+
+    <MudHidden Breakpoint="Breakpoint.MdAndDown">
+        <MudTable Items="@FilteredTramites"
+                  T="TramiteDto"
+                  Dense="true"
+                  Hover="true"
+                  Loading="@IsLoading"
+                  RowClass="cursor-pointer"
+                  SelectedItemChanged="OnItemChanged">
+            <HeaderContent>
+                <MudTh>Código</MudTh>
+                <MudTh>Trámite</MudTh>
+                <MudTh>Destino</MudTh>
+                <MudTh>Estado</MudTh>
+                <MudTh>Fechas</MudTh>
+                <MudTh>Acciones</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Código">@context.Codigo</MudTd>
+                <MudTd DataLabel="Trámite">@context.NombreTramite</MudTd>
+                <MudTd DataLabel="Destino">@context.AsignacionDestino</MudTd>
+                <MudTd DataLabel="Estado">
+                    <MudChip T="string" Color="@GetColorEstado(context.Estado)" Size="Size.Small">
+                        @GetTextoEstado(context.Estado)
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Fechas">
+                    <MudText Typo="Typo.caption">Inicio: @FormatDate(context.FechaInicio)</MudText>
+                    <MudText Typo="Typo.caption">Fin: @FormatDate(context.FechaFin)</MudText>
+                </MudTd>
+                <MudTd DataLabel="Acciones">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   OnClick="() => OnItemChanged(context)"
+                                   aria-label="Editar trámite" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Color="Color.Error"
+                                   Size="Size.Small"
+                                   Disabled="@(context.Id == Guid.Empty)"
+                                   OnClick="() => DeleteTramite(context.Id, context.NombreTramite)"
+                                   aria-label="Eliminar trámite" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudHidden>
+</MudCard>

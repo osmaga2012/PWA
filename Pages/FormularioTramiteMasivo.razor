@@ -1,0 +1,151 @@
+@page "/tramite/"
+@page "/tramite/{IdTramite:guid}"
+@using CRM.Dtos
+
+<MudPaper Elevation="4" Class="rounded-0 overflow-hidden border border-solid mud-border-lines-default w-100 tramite-masivo-form">
+    <MudToolBar Dense Class="mud-theme-primary rounded-0 px-4">
+        <MudIcon Icon="@Icons.Material.Filled.EditNote" Class="mr-2" Size="Size.Small" />
+        <MudText Typo="Typo.subtitle2" Style="font-weight: 700; text-transform: uppercase;">
+            @(ModoAlta ? "Nuevo trámite masivo" : "Gestión de trámite masivo")
+        </MudText>
+    </MudToolBar>
+
+    <MudForm Model="@tramite" @ref="form" @bind-IsValid="@success" @bind-Errors="@errors" Class="pa-6">
+        <MudStack Spacing="4">
+            <MudStack Spacing="1">
+                <MudText Typo="Typo.caption" Class="font-bold">DATOS DEL TRÁMITE</MudText>
+
+                <MudTextField @bind-Value="@tramite.NombreTramite"
+                              Label="Nombre del trámite"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Required="true"
+                              RequiredError="El nombre del trámite es obligatorio"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Badge"
+                              Class="rounded-0" />
+            </MudStack>
+
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker @bind-Date="@tramite.FechaInicio"
+                                   Label="Fecha de inicio"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   DateFormat="dd/MM/yyyy"
+                                   Required="true"
+                                   RequiredError="La fecha de inicio es obligatoria"
+                                   Class="rounded-0" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker @bind-Date="@tramite.FechaFin"
+                                   Label="Fecha final"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   DateFormat="dd/MM/yyyy"
+                                   Required="true"
+                                   RequiredError="La fecha final es obligatoria"
+                                   Class="rounded-0" />
+                </MudItem>
+            </MudGrid>
+
+            <MudTextField @bind-Value="@tramite.Observaciones"
+                          Label="Observaciones"
+                          Variant="Variant.Outlined"
+                          Lines="3"
+                          Class="rounded-0" />
+
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.caption" Class="font-bold">DESTINATARIOS</MudText>
+                <MudRadioGroup T="string"
+                               @bind-Value="AsignacionDestinoProxy"
+                               Class="tramite-masivo-destination-options">
+                    <MudRadio T="string" Value="@DestinoTodos" Label="Todos" />
+                    <MudRadio T="string" Value="@DestinoEmpresas" Label="Empresas" />
+                    <MudRadio T="string" Value="@DestinoPersonasEmpresa" Label="Personas de una empresa" />
+                    <MudRadio T="string" Value="@DestinoPersonasSueltas" Label="Personas sueltas" />
+                </MudRadioGroup>
+
+                @if (DebeMostrarSelectorEmpresas)
+                {
+                    <MudSelect T="string"
+                               Label="Empresas destinatarias"
+                               MultiSelection="true"
+                               Dense="true"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               SelectedValues="@EmpresasSeleccionadas"
+                               SelectedValuesChanged="OnEmpresasSeleccionadasChanged"
+                               Class="rounded-0">
+                        @foreach (var empresa in EmpresasDisponibles)
+                        {
+                            <MudSelectItem Value="@empresa.CodigoEmpresa">@($"{empresa.CodigoEmpresa} - {empresa.Empresa}")</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    @if (EmpresasSeleccionadas.Any())
+                    {
+                        <MudChipSet T="string" Class="mt-1">
+                            @foreach (var cod in EmpresasSeleccionadas)
+                            {
+                                <MudChip T="string"
+                                         Text="@GetEtiquetaEmpresa(cod)"
+                                         Color="Color.Primary"
+                                         Variant="Variant.Outlined"
+                                         Size="Size.Small"
+                                         OnClose="@((c) => QuitarEmpresa(cod))" />
+                            }
+                        </MudChipSet>
+                    }
+                }
+
+                @if (DebeMostrarSelectorPersonas)
+                {
+                    <MudSelect T="PersonasDto"
+                               Dense="true"
+                               Label="Personas destinatarias"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               MultiSelection="true"
+                               ToStringFunc="GetDescripcionPersona"
+                               SelectedValues="@PersonasSeleccionadas"
+                               SelectedValuesChanged="OnPersonasSeleccionadasChanged"
+                               Disabled="@DebeDeshabilitarSelectorPersonas"
+                               Class="rounded-0">
+                        @foreach (var persona in PersonasDisponibles)
+                        {
+                            <MudSelectItem Value="@persona">@GetDescripcionPersona(persona)</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
+            </MudStack>
+
+            <MudExpansionPanels Elevation="0" Class="border border-solid mud-border-lines-default">
+                <MudExpansionPanel Text="Detalles del registro" Class="rounded-0">
+                    <MudStack Spacing="1">
+                        <MudText Typo="Typo.caption">Código: <b>@(tramite.Codigo == 0 ? "Pendiente" : tramite.Codigo)</b></MudText>
+                        <MudText Typo="Typo.caption">Destino: <b>@tramite.AsignacionDestino</b></MudText>
+                        <MudText Typo="Typo.caption">Publicado: <b>@(tramite.EsPublicado ? "Sí" : "No")</b></MudText>
+                    </MudStack>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+
+            <MudStack Row Spacing="2" Class="mt-4">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth
+                           Class="rounded-0 py-2"
+                           StartIcon="@Icons.Material.Filled.Save"
+                           OnClick="GuardarCambios">
+                    Guardar trámite
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Default"
+                           Class="rounded-0 py-2"
+                           OnClick="Cancelar">
+                    Cancelar
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    </MudForm>
+</MudPaper>

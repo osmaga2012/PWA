@@ -1,0 +1,180 @@
+﻿@inherits LayoutComponentBase
+@implements IAsyncDisposable
+
+@using MudBlazor
+@using MudBlazor.Services
+@using PWA.Layout.Menus
+
+@inject NavigationManager NavManager
+
+<MudThemeProvider />
+<MudBreakpointProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout Class="main-layout">
+
+    <Topmenu />
+    
+    @if (!IsMobile())
+    {
+        <!-- IMPORTANTE: MudAppBar ya está en Topmenu, no necesita contenedor adicional -->
+       
+        <Menu DrawerOpen="@_drawerOpen"
+              ActiveTab="@ActiveTab"
+              OnSelectTab="@HandleTabSelection"
+              OnToggleDrawer="@ToggleDrawer" />
+    }
+
+@*     <MudMainContent Class="@GetMainContentClass()">
+        <CascadingValue Value="@IsMobile" Name="IsMobile">
+            @Body
+        </CascadingValue>
+    </MudMainContent> 
+    <MudMainContent Style="@(IsMobile() 
+        ? "background-color: #F1F5F9; padding: 24px; height: calc(100vh - 75px); overflow-y: auto;" 
+        : "background-color: #F1F5F9; padding: 94px 24px 24px 24px; height: 100vh; overflow-y: auto;")">
+        <MudGrid Spacing="12">
+            @Body
+        </MudGrid>
+
+
+    </MudMainContent>*@
+    <MudMainContent Class="@GetMainContentClass()">
+        @if (IsMobile())
+        {
+            <div class="mobile-page-wrapper">
+                @Body
+            </div>
+        }
+        else
+        {
+            <MudGrid Class="pa-4">
+                @Body
+            </MudGrid>
+        }
+    </MudMainContent>
+    @if (IsMobile())
+    {
+        <LiquidBottomNav ActiveTab="@ActiveTab" OnSelectTab="@HandleTabSelection" OnAbrirTramites="@NavigateToTramites" />
+    }
+</MudLayout>
+
+<!-- Filtro SVG -->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" class="svg-filters">
+    <defs>
+        <filter id="liquid-gooey">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+            <feColorMatrix in="blur" mode="matrix" 
+                           values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" 
+                           result="gooey" />
+            <feBlend in="SourceGraphic" in2="gooey" />
+        </filter>
+    </defs>
+</svg>
+
+@code {
+    [Inject] private IBrowserViewportService BreakpointService { get; set; } = default!;
+
+    private Guid _breakpointSubscriptionId;
+    private bool _drawerOpen = true;
+    private int _activeTab = 1;
+    private bool _isMobile;
+    private bool _isInitialized;
+    private bool _simularMovil = false; 
+
+
+    //public bool IsMobile => _isMobile;
+    public int ActiveTab => _activeTab;
+
+    private bool IsMobile() => _simularMovil || _isMobile;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_isInitialized)
+        {
+            _isInitialized = true;
+            await InitializeBreakpointDetectionAsync();
+        }
+    }
+
+    private async Task InitializeBreakpointDetectionAsync()
+    {
+        try
+        {
+            var currentBreakpoint = await BreakpointService.GetCurrentBreakpointAsync();
+            UpdateMobileState(currentBreakpoint);
+
+            _breakpointSubscriptionId = Guid.NewGuid();
+            await BreakpointService.SubscribeAsync(
+                _breakpointSubscriptionId,
+                HandleBreakpointChange,
+                new ResizeOptions { NotifyOnBreakpointOnly = false }
+            );
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al inicializar detección de breakpoint: {ex.Message}");
+        }
+    }
+
+    private void HandleBreakpointChange(BrowserViewportEventArgs args)
+    {
+        UpdateMobileState(args.Breakpoint);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateMobileState(Breakpoint breakpoint)
+    {
+        var wasMobile = _isMobile;
+        _isMobile = breakpoint is Breakpoint.Xs or Breakpoint.Sm;
+
+        if (wasMobile != _isMobile)
+        {
+            _drawerOpen = !_isMobile;
+        }
+    }
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void HandleTabSelection(int index)
+    {
+        _activeTab = index;
+        StateHasChanged();
+    }
+
+    private void NavigateToTramites()
+    {
+        _activeTab = 2;
+        NavManager.NavigateTo("/tramites");
+        StateHasChanged();
+    }
+
+    private string GetMainContentClass()
+    {
+        return IsMobile() ? "main-content main-content--mobile" : "main-content main-content--desktop";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_breakpointSubscriptionId != Guid.Empty)
+        {
+            try
+            {
+                await BreakpointService.UnsubscribeAsync(_breakpointSubscriptionId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al desuscribirse: {ex.Message}");
+            }
+        }
+
+        GC.SuppressFinalize(this);
+    }
+}

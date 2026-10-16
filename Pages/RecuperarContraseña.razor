@@ -1,0 +1,139 @@
+@page "/recuperar-contrasena"
+@using System.ComponentModel.DataAnnotations
+@using PWA.Interfaces
+@layout LoginLayout
+
+@inject IAuthService AuthService
+
+<PageTitle>Recuperar Contrasena - CRM</PageTitle>
+
+<div class="login-page">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <MudIcon Icon="@Icons.Material.Filled.LockReset"
+                         Class="login-logo" />
+                <MudText Typo="Typo.h4" Class="login-title">
+                    Recuperar Contrasena
+                </MudText>
+                <MudText Typo="Typo.body2" Class="login-subtitle">
+                    Ingresa tu correo electronico para recibir instrucciones
+                </MudText>
+            </div>
+
+            @if (_emailSent)
+            {
+                <MudAlert Severity="Severity.Success" Class="mb-4">
+                    Si el correo esta registrado, recibiras instrucciones para restablecer tu contrasena.
+                </MudAlert>
+                <MudButton Href="login"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true">
+                    Volver al inicio de sesion
+                </MudButton>
+            }
+            else
+            {
+                <EditForm Model="@_model" OnValidSubmit="@HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <MudTextField @bind-Value="_model.Email"
+                                  Label="Correo electronico"
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Email"
+                                  InputType="InputType.Email"
+                                  Required="true"
+                                  RequiredError="El correo electronico es obligatorio"
+                                  For="@(() => _model.Email)"
+                                  Class="mb-4"
+                                  Disabled="@_isLoading" />
+
+                    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                    {
+                        <MudAlert Severity="Severity.Error"
+                                  Class="mb-4"
+                                  Dense="true"
+                                  ShowCloseIcon="true"
+                                  CloseIconClicked="@(() => _errorMessage = null)">
+                            @_errorMessage
+                        </MudAlert>
+                    }
+
+                    <MudButton ButtonType="ButtonType.Submit"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               FullWidth="true"
+                               Disabled="@_isLoading">
+                        @if (_isLoading)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Enviando...</span>
+                        }
+                        else
+                        {
+                            <span>Enviar instrucciones</span>
+                        }
+                    </MudButton>
+
+                    <MudButton Href="login"
+                               Variant="Variant.Text"
+                               FullWidth="true"
+                               Class="mt-2">
+                        Volver al inicio de sesion
+                    </MudButton>
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private RecoveryModel _model = new();
+    private bool _isLoading;
+    private bool _emailSent;
+    private string? _errorMessage;
+
+    [SupplyParameterFromQuery(Name = "email")]
+    public string? Email { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrWhiteSpace(Email) && string.IsNullOrWhiteSpace(_model.Email))
+        {
+            _model.Email = Email.Trim();
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            var result = await AuthService.RequestPasswordRecoveryAsync(_model.Email.Trim());
+
+            if (result.Success)
+            {
+                _emailSent = true;
+            }
+            else
+            {
+                _errorMessage = result.Message ?? "No se pudo solicitar la recuperacion. Intentalo de nuevo.";
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    public class RecoveryModel
+    {
+        [Required(ErrorMessage = "El correo electronico es obligatorio")]
+        [EmailAddress(ErrorMessage = "Introduce un correo electronico valido")]
+        public string Email { get; set; } = string.Empty;
+    }
+}

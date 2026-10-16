@@ -1,0 +1,55 @@
+﻿@using MudBlazor
+
+<div class="liquid-nav-container">
+    <div class="liquid-gooey-clip">
+
+        <div class="liquid-indicator-track">
+            @for (int i = 0; i < VisibleItems.Count; i++)
+            {
+                <div class="liquid-track-slot @(ActiveIndex == i ? "active" : "")">
+                    @if (ActiveIndex == i)
+                    {
+                        <div class="liquid-indicator"></div>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="liquid-nav-bar">
+            @for (int i = 0; i < VisibleItems.Count; i++)
+            {
+                var index = i;
+                var item = VisibleItems[index];
+                var isActive = ActiveIndex == index;
+
+                if (item.IsTramites)
+                {
+                    <button type="button"
+                            class="liquid-nav-item liquid-nav-item--center @(isActive ? "active" : "")"
+                            @onclick="AbrirTramitesAsync"
+                            aria-label="@item.Text">
+                        <div class="liquid-item-content">
+                            <MudIcon Icon="@item.Icon" />
+                            <span>@item.Text</span>
+                        </div>
+                    </button>
+                }
+                else
+                {
+                    <a class="liquid-nav-item @(isActive ? "active" : "")"
+                       href="@item.Url"
+                       @onclick:preventDefault="false"
+                       @onclick="() => SetActive(index)"
+                       aria-label="@item.Text"
+                       aria-current="@(isActive ? "page" : null)">
+                        <div class="liquid-item-content">
+                            <MudIcon Icon="@item.Icon" />
+                            <span>@item.Text</span>
+                        </div>
+                    </a>
+                }
+            }
+        </div>
+
+    </div>
+</div>

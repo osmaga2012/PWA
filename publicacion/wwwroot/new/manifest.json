@@ -1,0 +1,47 @@
+{
+  "name": "CRM Progressive Web App",
+  "short_name": "CRM PWA",
+  "description": "Aplicación de gestión de relaciones con clientes",
+  "start_url": "./",
+  "display": "standalone",
+  "display_override": [ "window-controls-overlay", "standalone" ],
+  "background_color": "#ffffff",
+  "theme_color": "#03173d",
+  "orientation": "portrait-primary",
+  "scope": "./",
+  "lang": "es-ES",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "business",
+    "productivity"
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Ir al panel principal",
+      "url": "./",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
+}

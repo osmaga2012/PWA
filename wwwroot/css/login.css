@@ -1,0 +1,83 @@
+/* Login page styles */
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    background:
+        radial-gradient(circle at top, rgba(59, 130, 246, 0.18), transparent 35%),
+        linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 1100px;
+    overflow: hidden;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+    backdrop-filter: blur(10px);
+}
+
+.login-hero {
+    padding: 2.5rem;
+    color: #fff;
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 45%, #0f172a 100%);
+}
+
+.login-hero h1,
+.login-hero h2,
+.login-hero h3,
+.login-hero p {
+    margin: 0;
+}
+
+.login-hero p {
+    margin-top: 0.75rem;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.6;
+}
+
+.login-content {
+    padding: 2.5rem;
+}
+
+.login-content .mud-input-control,
+.login-content .mud-button-root,
+.login-content .mud-checkbox {
+    width: 100%;
+}
+
+.login-content .mud-button-root {
+    min-height: 48px;
+    font-weight: 600;
+    text-transform: none;
+    border-radius: 12px;
+}
+
+.login-content a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.login-content a:hover {
+    text-decoration: underline;
+}
+
+.login-footer {
+    margin-top: 1.25rem;
+    font-size: 0.95rem;
+    color: #64748b;
+}
+
+@media (max-width: 768px) {
+    .login-card {
+        border-radius: 18px;
+    }
+
+    .login-hero,
+    .login-content {
+        padding: 1.5rem;
+    }
+}

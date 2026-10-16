@@ -1,0 +1,38 @@
+﻿@using CRM.Dtos
+@using CRM.Dtos.Enums
+@using Microsoft.AspNetCore.Components.Authorization 
+
+<div class="nav-menu-links">
+    <MudNavLink Href="perfil" Icon="@Icons.Material.Filled.Person">Mi Perfil</MudNavLink>
+    <MudDivider Class="my-2" />
+
+    <MudNavLink Href=""
+                Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+
+    <MudNavLink 
+        Href="Barcos" 
+        Icon="@Icons.Material.Filled.DirectionsBoat">Centros de trabajo</MudNavLink>
+
+    @if (PuedeVerTramites)
+    {
+        <MudNavLink
+            Href="tramites"
+            Icon="@Icons.Material.Filled.DocumentScanner">Gestión de trámites</MudNavLink>
+    }
+    <MudNavLink 
+        Href="gestoria/usuarios" 
+        Icon="@Icons.Material.Filled.Archive">Gestión de Usuarios</MudNavLink>
+</div>
+
+<MudSpacer />
+
+<MudDivider Class="mt-4 mb-2" />
+
+<AuthorizeView Roles="Administrador" >
+    <MudNavLink Href="cofradia" Icon="@Icons.Material.Filled.Domain">Datos de la Cofradía</MudNavLink>
+    <MudNavLink Href="configuracion" Icon="@Icons.Material.Filled.Settings">Configuración</MudNavLink>
+</AuthorizeView>
+
+
+
+

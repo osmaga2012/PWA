@@ -1,0 +1,47 @@
+@page "/redirect-to-login"
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="redirect-container">
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    <MudText Typo="Typo.body1" Class="mt-4">Redirigiendo al inicio de sesión...</MudText>
+</div>
+
+<style>
+    .redirect-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+    }
+</style>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                // Limpiar cualquier token inválido
+                await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "access_token");
+                
+                var currentUri = Navigation.Uri;
+                var returnUrl = Uri.EscapeDataString(currentUri);
+                
+                Console.WriteLine($"[RedirectToLogin] Redirigiendo a login con returnUrl: {currentUri}");
+                
+                // Pequeño delay para que se vea el mensaje
+                await Task.Delay(500);
+                
+                Navigation.NavigateTo($"login?returnUrl={returnUrl}", forceLoad: true);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[RedirectToLogin] Error: {ex.Message}");
+                Navigation.NavigateTo("login", forceLoad: true);
+            }
+        }
+    }
+}

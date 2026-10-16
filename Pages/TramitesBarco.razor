@@ -1,0 +1,65 @@
+@page "/barco/tramites"
+@page "/barcos/{CodigoBarco}/tramites"
+@page "/barco/empresa/{CodigoEmpresa}/tramites/{CodigoBarco}"
+@attribute [Authorize]
+
+<MudItem xl="12" lg="12" xs="12">
+    <div class="mobile-page-header tramites-barco-header">
+        <div>
+            <MudText Typo="Typo.h6" Class="fw-bold">Trámites del barco</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@barco?.NombreB</MudText>
+        </div>
+        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">
+            @tramites.Count
+        </MudChip>
+    </div>
+
+    <MudHidden Breakpoint="Breakpoint.MdAndUp">
+        <TablaTramites Tramites="@tramites" OnTramiteSeleccionado="SeleccionarTramite" Barco="@barco" />
+
+        @if (_mobileEditorOpen)
+        {
+            <div class="mobile-fullscreen-editor" role="dialog" aria-modal="true" aria-labelledby="mobile-editor-title">
+                <div class="mobile-fullscreen-editor__bar">
+                    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                   Color="Color.Default"
+                                   Edge="Edge.Start"
+                                   OnClick="CerrarEditorMovil"
+                                   aria-label="Cerrar edición" />
+                    <div class="mobile-fullscreen-editor__title">
+                        <MudText Typo="Typo.subtitle1" Class="fw-bold" id="mobile-editor-title">Editar trámite</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@tramite.Certificado</MudText>
+                    </div>
+                </div>
+                <div class="mobile-fullscreen-editor__body">
+                    <FormularioTramite Model="@tramite"
+                                       CodigoBarco="@CodigoBarco"
+                                       CodigoEmpresa="@CodigoEmpresa"
+                                       barco="@barco"
+                                       IsEditMode="@IsEditMode"
+                                       OnCancelar="CerrarEditorMovil"
+                                       OnGuardar="ProcesarGuardado" />
+                </div>
+            </div>
+        }
+    </MudHidden>
+        
+    <MudHidden Breakpoint="Breakpoint.MdAndDown">
+        <MudGrid>
+
+            <MudItem xs="6">
+                <TablaTramites Tramites="@tramites.ToList()" OnTramiteSeleccionado="SeleccionarTramite" Barco="@barco" />
+            </MudItem>
+            <MudItem xs="6">
+                <FormularioTramite Model="@tramite"
+                                   CodigoBarco="@CodigoBarco"
+                                   CodigoEmpresa="@CodigoEmpresa"
+                                   barco="@barco"
+                                   IsEditMode="@IsEditMode"
+                                   OnCancelar="LimpiarFormulario"
+                                   OnGuardar="ProcesarGuardado" />
+            </MudItem>
+
+        </MudGrid>
+    </MudHidden>
+</MudItem>

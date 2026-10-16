@@ -1,0 +1,225 @@
+﻿@page "/configuracion"
+@using CRM.Dtos.Enums
+<MudContainer MaxWidth="MaxWidth.Large" Class="my-8">
+    <MudPaper Class="pa-4 mud-elevation-2">
+        <div class="d-flex justify-space-between align-center mb-4">
+            <MudText Typo="Typo.h5" Class="mud-text-secondary">Configuración de la Aplicación</MudText>
+            <MudButton
+                Variant="Variant.Filled"
+                Color="Color.Primary"
+                StartIcon="@Icons.Material.Filled.Save"
+                OnClick="Guardar"
+                Size="Size.Large">
+                Guardar Configuración
+            </MudButton>
+        </div>
+
+        <MudDivider Class="mb-4" />
+
+        <MudForm Model="@configuracion"
+                 @ref="_form"
+                 @bind-IsValid="@_success"
+                 @bind-Errors="@_errors">
+            <MudValidationSummary />
+
+            <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6 mt-4">
+                <MudTabPanel Text="Configuración de Avisos">
+                    <MudGrid Spacing="4">
+                        @* Columna izquierda para ajustes de notificaciones *@
+                        <MudItem xs="12" sm="5"> @* sm=5 para dejar espacio para la columna de placeholders *@
+                            <MudPaper Class="pa-4 mud-height-full mud-elevation-1">
+                                <MudText Typo="Typo.subtitle1" Class="mb-3 mud-text-primary">
+                                    <MudIcon Icon="@Icons.Material.Filled.NotificationsActive" Size="Size.Small" Class="mr-2" />
+                                    Ajustes de Notificaciones
+                                </MudText>
+
+                                <MudNumericField Label="Días de Antelación para Avisos"
+                                                 HelperText="Número de días antes de la fecha de caducidad para enviar el aviso."
+                                                 @bind-Value="configuracion.DiasAntelacionAviso"
+                                                 For="@(() => configuracion.DiasAntelacionAviso)"
+                                                 Variant="Variant.Text"
+                                                 Adornment="Adornment.End" AdornmentText="días"
+                                                 Required="true"
+                                                 RequiredError="El número de días es obligatorio."
+                                                 Min="1" Max="365"
+                                                 Immediate="true" />
+
+                                <MudNumericField T="int" Label="Intervalo de Envío"
+                                                 HelperText="Frecuencia para enviar avisos."
+                                                 @bind-Value="IntervaloEnvioCantidad"
+                                                 ValueExpression="@(() => IntervaloEnvioCantidad)"
+                                                 Variant="Variant.Text"
+                                                 Adornment="Adornment.End" AdornmentText="@ObtenerAbreviaturaUnidad(IntervaloEnvioUnidad)"
+                                                 Required="true"
+                                                 Min="1"
+                                                 Immediate="true" />
+
+                                <MudSelect T="IntervaloTiempoUnidadDto" Label="Unidad de Tiempo"
+                                           @bind-Value="IntervaloEnvioUnidad"
+                                           ValueExpression="@(() => IntervaloEnvioUnidad)"
+                                           Variant="Variant.Text"
+                                           Required="true"
+                                           Class="mt-4">
+                                    <MudSelectItem Value="IntervaloTiempoUnidadDto.Minutos">Minutos</MudSelectItem>
+                                    <MudSelectItem Value="IntervaloTiempoUnidadDto.Horas">Horas</MudSelectItem>
+                                    <MudSelectItem Value="IntervaloTiempoUnidadDto.Dias">Días</MudSelectItem>
+                                    <MudSelectItem Value="IntervaloTiempoUnidadDto.Semanas">Semanas</MudSelectItem>
+                                </MudSelect>
+
+      @*                           <MudTimePicker Label="Hora de Envío de Avisos (UTC)"
+                                               HelperText="La hora del día (UTC) en que se procesarán los avisos."
+                                               @bind-Time="@_notificationTime"
+                                               TimeFormat="hh:mm tt"
+                                               For="@(() => configuracion.HoraNotificacionUTC)"
+                                               Required="true"
+                                               RequiredError="La hora de notificación es obligatoria."
+                                               Immediate="true" /> *@
+                            </MudPaper>
+                        </MudItem>
+
+                        @* Columna central para las plantillas de email *@
+                        <MudItem xs="12" sm="5"> @* sm=5 para dejar espacio para la columna de placeholders *@
+                            <MudPaper Class="pa-4 mud-height-full mud-elevation-1">
+                                <MudText Typo="Typo.subtitle1" Class="mb-3 mud-text-primary">
+                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="mr-2" />
+                                    Plantilla de Email (Aviso Trámites)
+                                </MudText>
+
+                                <MudTextField Label="Asunto del Email"
+                                              @bind-Value="configuracion.PlantillaAsuntoAvisoTramite"
+                                              For="@(() => configuracion.PlantillaAsuntoAvisoTramite)"
+                                              Variant="Variant.Text"
+                                              Placeholder="Ej: ¡Aviso! Trámite [NombreTramite] próximo a caducar"
+                                              HelperText="Usa los placeholders del panel derecho."
+                                              Lines="1" />
+
+                                <MudTextField Label="Cuerpo del Email"
+                                              @bind-Value="configuracion.PlantillaCuerpoAvisoTramite"
+                                              For="@(() => configuracion.PlantillaCuerpoAvisoTramite)"
+                                              Variant="Variant.Text"
+                                              Placeholder="Ej: Estimado usuario, el trámite [NombreTramite] de [NombreBarco] caduca el [FechaFinTramite]."
+                                              HelperText="Usa los placeholders del panel derecho. Puedes usar HTML."
+                                              Lines="10" />
+                            </MudPaper>
+                        </MudItem>
+
+                        @* Columna derecha para los placeholders disponibles *@
+                        <MudItem xs="12" sm="2"> @* sm=2 para una columna más estrecha para los placeholders *@
+                            <MudPaper Class="pa-4 mud-height-full mud-elevation-1" Outlined="true"> @* Outlined para un aspecto más ligero *@
+                                <MudText Typo="Typo.subtitle2" Class="mb-3 mud-text-secondary">
+                                    <MudIcon Icon="@Icons.Material.Filled.DataArray" Size="Size.Small" Class="mr-2" />
+                                    Placeholders Disponibles
+                                </MudText>
+                                <MudList T="string" Dense="true"> @* Lista densa para ahorrar espacio *@
+                                    <MudListItem Text="[NombreTramite]" OnClick='() => CopyToClipboard("[NombreTramite]")' />
+                                    <MudListItem Text="[NombreBarco]" OnClick='() => CopyToClipboard("[NombreBarco]")' />
+                                    <MudListItem Text="[CodigoBarco]" OnClick='() => CopyToClipboard("[CodigoBarco]")' />
+                                    <MudListItem Text="[FechaFinTramite]" OnClick='() => CopyToClipboard("[FechaFinTramite]")' />
+                                    <MudListItem Text="[EmailDestinatario]" OnClick='() => CopyToClipboard("[EmailDestinatario]")' />
+                                    <MudListItem Text="[NombreRemitente]" OnClick='() => CopyToClipboard("[NombreRemitente]")' />
+                                    <MudListItem Text="[TotalCertificadosACaducar]" OnClick='() => CopyToClipboard("[TotalCertificadosACaducar]")' />
+                                </MudList>
+                                <MudText Typo="Typo.caption" Class="mt-2 mud-text-align-center mud-text-disabled">
+                                    Haz clic para copiar
+                                </MudText>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Configuración de Email SMTP">
+                    <MudPaper Class="pa-4 mud-elevation-1">
+                        <MudText Typo="Typo.subtitle1" Class="mb-3 mud-text-primary">
+                            <MudIcon Icon="@Icons.Material.Filled.Mail" Size="Size.Small" Class="mr-2" />
+                            Ajustes de Servidor SMTP
+                        </MudText>
+                        <MudGrid>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField Label="Servidor SMTP"
+                                              @bind-Value="configuracion.ServidorSMTP"
+                                              For="@(() => configuracion.ServidorSMTP)"
+                                              Variant="Variant.Text"
+                                              Required="true"
+                                              RequiredError="El servidor SMTP es obligatorio."
+                                              Clearable="true"
+                                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Cloud" />
+
+                                <MudTextField Label="Puerto"
+                                              @bind-Value="configuracion.Puerto"
+                                              For="@(() => configuracion.Puerto)"
+                                              Variant="Variant.Text"
+                                              InputType="InputType.Number"
+                                              Required="true"
+                                              RequiredError="El puerto es obligatorio."
+                                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.SettingsInputAntenna" />
+
+                                <MudCheckBox @bind-Value="configuracion.EnableSSL"
+                                             Label="Habilitar Conexión Segura (SSL/TLS)"
+                                             Color="Color.Primary" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField Label="Usuario SMTP"
+                                              @bind-Value="configuracion.UsuarioSmtp"
+                                              For="@(() => configuracion.UsuarioSmtp)"
+                                              Variant="Variant.Text"
+                                              Required="true"
+                                              RequiredError="El usuario SMTP es obligatorio."
+                                              Clearable="true"
+                                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person" />
+
+                                <MudTextField Label="Contraseña SMTP"
+                                              @bind-Value="configuracion.PasswordSmtp"
+                                              For="@(() => configuracion.PasswordSmtp)"
+                                              Variant="Variant.Text"
+                                              InputType="InputType.Password"
+                                              Required="true"
+                                              RequiredError="La contraseña es obligatoria."
+                                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Lock" />
+
+                                <MudTextField Label="Nombre a Mostrar"
+                                              @bind-Value="configuracion.NombreAMostrar"
+                                              For="@(() => configuracion.NombreAMostrar)"
+                                              Variant="Variant.Text"
+                                              Clearable="true"
+                                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AlternateEmail" />
+
+                                <MudTextField Label="Email de Envío"
+                                              @bind-Value="configuracion.EmailEnvio"
+                                              For="@(() => configuracion.EmailEnvio)"
+                                              Variant="Variant.Text"
+                                              InputType="InputType.Email"
+                                              Required="true"
+                                              RequiredError="El email de envío es obligatorio y debe ser válido."
+                                              Clearable="true"
+                                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Email" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <div class="d-flex justify-end mt-4">
+                                    <MudButton
+                                        Variant="Variant.Outlined"
+                                        Color="Color.Secondary"
+                                        StartIcon="@Icons.Material.Filled.MarkEmailRead"
+                                        OnClick="ProbarCorreo"
+                                        Loading="@_isTestingEmail"
+                                        Disabled="@_isTestingEmail">
+                                        Enviar correo de prueba
+                                    </MudButton>
+                                    @if (configuracion.EnvioPruebaExitoso)
+                                    {
+                                        <MudChip T="string" Class="ml-4"
+                                                 Variant="Variant.Outlined"
+                                                 Color="@(configuracion.EnvioPruebaExitoso ? Color.Success : Color.Error)">
+                                            @(configuracion.EnvioPruebaExitoso
+                                                ? "Última prueba exitosa"
+                                                : "Última prueba fallida")
+                                        </MudChip>
+                                    }
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudTabPanel>
+            </MudTabs>
+        </MudForm>
+    </MudPaper>
+</MudContainer>

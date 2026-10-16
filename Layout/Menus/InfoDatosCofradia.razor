@@ -1,0 +1,27 @@
+@using PWA.Interfaces
+@inject ICurrentUserService CurrentUserService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<span class="cofradia-title">@_nombreCofradia</span>
+
+@code {
+    private string _nombreCofradia = "Cofradía";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated == true)
+            {
+                var user = await CurrentUserService.GetCurrentUserAsync(authState.User);
+                if (!string.IsNullOrWhiteSpace(user?.Gestoria?.Nombre))
+                    _nombreCofradia = user.Gestoria.Nombre;
+            }
+        }
+        catch
+        {
+            // Mantener título por defecto
+        }
+    }
+}

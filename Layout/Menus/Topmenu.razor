@@ -1,0 +1,254 @@
+﻿@using System.Security.Claims
+@using CRM.Dtos
+@using Microsoft.AspNetCore.Components.Authorization
+@using MudBlazor
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ICurrentUserService CurrentUserService
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<MudAppBar Elevation="0" Class="top-menu-bar" Fixed="true">
+    @if (_showBackButton)
+    {
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="@GoBack"
+                       Class="mobile-back-btn"
+                       aria-label="Volver" />
+    }
+
+    <div class="app-title-block">
+        @if (_showBackButton)
+        {
+            <MudText Typo="Typo.subtitle2" Class="app-page-title fw-bold">
+                @_pageTitle
+            </MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.subtitle1" Class="app-title fw-bold">
+                <InfoDatosCofradia />
+            </MudText>
+        }
+    </div>
+
+    <MudSpacer />
+
+    <MudTextField @bind-Value="@_searchQuery"
+                  Placeholder="Buscar..."
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search"
+                  Class="search-field d-none d-md-flex"
+                  Immediate="false"
+                  DebounceInterval="300"
+                  OnDebounceIntervalElapsed="@HandleSearch"
+                  aria-label="Buscar" />
+
+    <MudBadge Content="@_notificationCount"
+              Color="Color.Error"
+              Overlap="true"
+              Visible="@(_notificationCount > 0)"
+              Class="notification-badge">
+        <MudIconButton Icon="@Icons.Material.Outlined.Notifications"
+                       Color="Color.Default"
+                       Size="Size.Medium"
+                       OnClick="@ShowNotifications"
+                       aria-label="Notificaciones" />
+    </MudBadge>
+
+    <MudMenu AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.BottomRight">
+        <ActivatorContent >
+            <div @onclick="@context.ToggleAsync" style="cursor: pointer">
+                <MudAvatar Class="user-avatar ms-1"
+                           Color="Color.Primary"
+                           Image="@_avatarImage"
+                           Alt="@($"{_currentUser?.Nombre} {_currentUser?.Apellidos}")">
+                    @if (string.IsNullOrWhiteSpace(_avatarImage))
+                    {
+                        <MudText>@_avatarInitials</MudText>
+                    }
+                </MudAvatar>
+            </div>
+
+        </ActivatorContent>
+        <ChildContent>
+            @if (_currentUser != null)
+            {
+                <div class="px-4 py-2">
+                    <MudText Typo="Typo.subtitle2" Class="fw-bold">@($"{_currentUser.Nombre} {_currentUser.Apellidos}".Trim())</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@_currentUser.NombreUsuario</MudText>
+                </div>
+                <MudDivider />
+            }
+            <MudMenuItem Icon="@Icons.Material.Filled.Person" OnClick="@NavigateToProfile">
+                Mi Perfil
+            </MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.Notifications" OnClick="@ShowNotifications">
+                Notificaciones
+            </MudMenuItem>
+            <AuthorizeView Policy="EsAdmin">
+                <MudMenuItem Icon="@Icons.Material.Filled.Settings" OnClick="@NavigateToSettings">
+                    Configuración
+                </MudMenuItem>
+            </AuthorizeView>
+            <MudDivider />
+            <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="@HandleLogoutAsync" IconColor="Color.Error">
+                <MudText Color="Color.Error">Cerrar Sesión</MudText>
+            </MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+</MudAppBar>
+
+@code {
+    private UsuarioDto? _currentUser;
+    private string? _avatarImage;
+    private string _avatarInitials = "";
+    private string _searchQuery = "";
+    private bool _showBackButton;
+    private string _pageTitle = "";
+    private int _notificationCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+        UpdatePageContext(NavigationManager.Uri);
+        await LoadCurrentUserAsync();
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        UpdatePageContext(e.Location);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdatePageContext(string uri)
+    {
+        var path = new Uri(uri).AbsolutePath.TrimStart('/').ToLowerInvariant();
+
+        (_showBackButton, _pageTitle) = path switch
+        {
+            "" or "home" => (false, ""),
+            "barcos" => (false, "Flota"),
+            "tramites" => (false, "Trámites"),
+            "perfil" => (false, "Perfil"),
+            _ when path.StartsWith("barcos/") && path.Contains("tramites") => (true, "Trámites del barco"),
+            _ when path.StartsWith("barco/") => (true, "Trámites del barco"),
+            _ when path.StartsWith("barcos/") => (true, "Detalle embarcación"),
+            _ => (path.Contains('/'), "Volver")
+        };
+    }
+
+    private void GoBack()
+    {
+        var path = new Uri(NavigationManager.Uri).AbsolutePath.TrimStart('/').ToLowerInvariant();
+
+        if (path.StartsWith("barcos/") || path.StartsWith("barco/"))
+            NavigationManager.NavigateTo("barcos");
+        else
+            NavigationManager.NavigateTo("/new");
+    }
+
+    private async Task LoadCurrentUserAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                _currentUser = await CurrentUserService.GetCurrentUserAsync(user);
+
+                if (_currentUser != null)
+                {
+                    if (string.IsNullOrWhiteSpace(_avatarImage))
+                        _avatarInitials = GetInitials(_currentUser, user);
+                }
+                else
+                {
+                    _avatarInitials = GetInitials(null, user);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar usuario: {ex.Message}");
+            _avatarInitials = "??";
+        }
+    }
+
+    private async Task HandleLogoutAsync()
+    {
+        try
+        {
+            await AuthService.LogoutAsync();
+            NavigationManager.NavigateTo("login", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cerrar sesión: {ex.Message}");
+        }
+    }
+
+    private void NavigateToProfile() => NavigationManager.NavigateTo("perfil");
+    private void NavigateToSettings() => NavigationManager.NavigateTo("configuracion");
+
+    private void ShowNotifications()
+    {
+        // Placeholder hasta implementar Web Push
+        Console.WriteLine("Mostrar notificaciones");
+    }
+
+    private void HandleSearch()
+    {
+        if (!string.IsNullOrWhiteSpace(_searchQuery))
+            NavigationManager.NavigateTo($"/buscar?q={Uri.EscapeDataString(_searchQuery)}");
+    }
+
+    private string GetInitials(UsuarioDto? usuario = null, ClaimsPrincipal? principal = null)
+    {
+        if (usuario != null)
+        {
+            var nombre = usuario.Nombre?.Trim();
+            var apellidos = usuario.Apellidos?.Trim();
+
+            if (!string.IsNullOrWhiteSpace(nombre) && !string.IsNullOrWhiteSpace(apellidos))
+                return $"{nombre[0]}{apellidos[0]}".ToUpper();
+
+            if (!string.IsNullOrWhiteSpace(nombre))
+                return nombre.Substring(0, Math.Min(2, nombre.Length)).ToUpper();
+
+            if (!string.IsNullOrWhiteSpace(usuario.NombreUsuario))
+                return usuario.NombreUsuario.Substring(0, Math.Min(2, usuario.NombreUsuario.Length)).ToUpper();
+        }
+
+        if (principal?.Identity?.IsAuthenticated == true)
+        {
+            var name = principal.FindFirst(ClaimTypes.Name)?.Value;
+            var email = principal.FindFirst(ClaimTypes.Email)?.Value;
+
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length >= 2)
+                    return $"{parts[0][0]}{parts[1][0]}".ToUpper();
+                return name.Substring(0, Math.Min(2, name.Length)).ToUpper();
+            }
+
+            if (!string.IsNullOrWhiteSpace(email))
+                return email.Substring(0, Math.Min(2, email.Length)).ToUpper();
+        }
+
+        return "??";
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

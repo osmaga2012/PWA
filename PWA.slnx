@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Elementos de la solución/">
+    <File Path="AGENTS.md" />
+  </Folder>
+  <Project Path="../PWA.App/PWA.App.csproj" Id="ad62da08-f5e6-4b42-9db7-24b4972586b6">
+    <Deploy Solution="Debug|*" />
+  </Project>
+  <Project Path="../PWA.Nativo/PWA.Nativo.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
+  <Project Path="PWA.csproj" />
+</Solution>

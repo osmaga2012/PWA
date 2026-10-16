@@ -1,0 +1,55 @@
+﻿@page "/barco/{codigoBarco:int}/editar/{idTramite:guid}"
+@attribute [Authorize]
+@inject IApiClient<BarcosTramitesDto> BarcoTramiteService;
+@inject IApiClient<BarcosDto> BarcoService;
+
+<FormularioTramite Model="@_model"
+                   CodigoBarco="@_idBarco.ToString()"
+                   CodigoEmpresa="@CodigoEmpresa"
+                   barco="@barco"
+                   IsEditMode="true"
+                   OnCancelar="CerrarEditorMovil"
+                   OnGuardar="ProcesarGuardado" />
+
+@code{
+    [Parameter]
+    public int codigoBarco { get; set; }
+
+    [Parameter]
+    public Guid idTramite { get; set; }
+
+    private int _idBarco;
+    private bool _mobileEditorOpen;
+    private BarcosTramitesDto _model = new();
+    private BarcosDto? barco;
+    private string? CodigoEmpresa;
+
+    override protected async Task OnParametersSetAsync()
+    {
+        _idBarco = codigoBarco;
+
+        var filtroBarco = new Dictionary<string, string>
+        {
+            ["CodigoBarco"] = _idBarco.ToString()
+        };
+
+        barco = (await BarcoService.GetAllAsync("api/Barcos", filtroBarco)).FirstOrDefault();
+
+        var tramiteResponse = await BarcoTramiteService.GetByIdAsync("api/BarcosTramites", idTramite);
+        if (tramiteResponse != null)
+        {
+            _model = tramiteResponse;
+            CodigoEmpresa = tramiteResponse.CodigoEmpresa;
+        }
+    }
+
+    private async Task ProcesarGuardado(BarcosTramitesDto tramite)
+    {
+        // Lógica de guardado
+    }
+
+    private void CerrarEditorMovil()
+    {
+        _mobileEditorOpen = false;
+    }
+}

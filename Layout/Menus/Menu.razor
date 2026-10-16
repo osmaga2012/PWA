@@ -1,0 +1,148 @@
+﻿
+@using CRM.Dtos
+@using Microsoft.AspNetCore.Components.Authorization
+@using MudBlazor
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ICurrentUserService CurrentUserService
+@inject IAuthService AuthService
+
+<MudDrawer Open="DrawerOpen"
+           OpenChanged="EventCallback.Factory.Create<bool>(this, (val) => {} /* Evita cierre automático */)"
+           Variant="DrawerVariant.Mini"
+           Elevation="1"
+           Fixed="true"
+           Class="@GetDrawerClass()">
+
+    <div class="cofradia-sidebar-shell">
+        <div class="cofradia-sidebar-top">
+            <div class="cofradia-sidebar-brand">
+                <div class="cofradia-sidebar-brand__logo">
+                    <img src="imagenes/logo-cofradia-icon.png"
+                         alt="Logotipo Cofradía de Pescadores" />
+                </div>
+                @if (DrawerOpen)
+                {
+                    <div class="cofradia-sidebar-brand__text">
+                        <MudText Typo="Typo.subtitle2" Class="fw-bold cofradia-sidebar-brand__title">Cofradía de Pescadores</MudText>
+                        <MudText Typo="Typo.caption">Panel operativo</MudText>
+                    </div>
+                }
+            </div>
+
+            <MudIconButton Icon="@(DrawerOpen ? Icons.Material.Filled.ChevronLeft : Icons.Material.Filled.ChevronRight)"
+                           Color="Color.Default"
+                           Size="Size.Small"
+                           Class="cofradia-sidebar-toggle"
+                           OnClick="ToggleDrawer"
+                           aria-label="Contraer o expandir menú" />
+        </div>
+
+        <MudNavMenu Bordered="false" Class="cofradia-sidebar-nav">
+            <div class="menu-label-pills">@(DrawerOpen ? "PRINCIPAL" : "")</div>
+            <MudNavLink Match="NavLinkMatch.All" Href=""
+                        Icon="@Icons.Material.Filled.GridView"  
+                        Class="@(ActiveTab == 0 ? "pill-link active" : "pill-link")">Panel</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.Prefix" 
+                        Icon="@Icons.Material.Filled.DirectionsBoat" 
+                        Href="barcos" Class="@(ActiveTab == 1 ? "pill-link active" : "pill-link")">Flota</MudNavLink>
+            
+            <div class="menu-label-pills mt-4">@(DrawerOpen ? "GESTIÓN" : "")</div>
+            @if (PuedeVerTramites)
+            {
+                <MudNavLink Match="NavLinkMatch.Prefix"
+                            Icon="@Icons.Material.Filled.ReceiptLong"
+                            Href="tramites"
+                            Class="@(ActiveTab == 2 ? "pill-link active" : "pill-link")">Trámites</MudNavLink>
+            }
+
+            <MudNavLink Match="NavLinkMatch.Prefix"
+                        Icon="@Icons.Material.Filled.VerifiedUser"
+                        Href="gestoria/usuarios"
+                        Class="@(ActiveTab == 3 ? "pill-link active" : "pill-link")">Usuarios</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.Prefix"
+                        Icon="@Icons.Material.Filled.Person"
+                        Href="perfil"
+                        Class="@(ActiveTab == 4 ? "pill-link active" : "pill-link")">Perfil</MudNavLink>
+
+            <AuthorizeView Policy="EsAdmin">
+                <Authorized>
+                    <div class="menu-label-pills mt-4">@(DrawerOpen ? "AJUSTES" : "")</div>
+                    <MudNavLink Match="NavLinkMatch.Prefix"
+                                    Icon="@Icons.Material.Filled.Settings"
+                                    Href="configuracion"
+                                    Class="@(ActiveTab == 4 ? "pill-link active" : "pill-link")">Configuración</MudNavLink>
+                </Authorized>
+
+            </AuthorizeView>
+
+        </MudNavMenu>
+
+        <div class="cofradia-sidebar-status">
+            <MudIcon Icon="@Icons.Material.Filled.Circle" Size="Size.Small" />
+            @if (DrawerOpen)
+            {
+                <div>
+                    <MudText Typo="Typo.caption" Class="fw-bold">Sistema activo</MudText>
+                    <MudText Typo="Typo.caption">Sin incidencias</MudText>
+                </div>
+            }
+        </div>
+    </div> 
+</MudDrawer>
+
+@code {
+    [Parameter] public bool DrawerOpen { get; set; }
+    [Parameter] public int ActiveTab { get; set; }
+    [Parameter] public EventCallback<int> OnSelectTab { get; set; }
+    [Parameter] public EventCallback OnToggleDrawer { get; set; }
+
+    
+    private UsuarioDto? currentUser;
+
+    private bool PuedeVerTramites => currentUser?.TipoUsuario == CRM.Dtos.Enums.TipoUsuarioDto.Administrador;
+
+    private string GetDrawerClass() => DrawerOpen
+        ? "sidebar-floating cofradia-sidebar cofradia-sidebar--open"
+        : "sidebar-floating cofradia-sidebar cofradia-sidebar--mini";
+
+    private async Task CambiarTab(int index)
+    {
+        await OnSelectTab.InvokeAsync(index);
+    }
+
+    private async Task ToggleDrawer()
+    {
+        await OnToggleDrawer.InvokeAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadCurrentUserAsync();
+
+            AuthenticationStateProvider.AuthenticationStateChanged += async (task) =>
+            {
+                var authState = await task;
+                currentUser = authState.User.Identity?.IsAuthenticated == true
+                    ? await CurrentUserService.GetCurrentUserAsync(authState.User)
+                    : null;
+               
+                StateHasChanged();
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al obtener el usuario actual: {ex.Message}");
+        }
+    }
+
+    private async Task LoadCurrentUserAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        currentUser = authState.User.Identity?.IsAuthenticated == true
+            ? await CurrentUserService.GetCurrentUserAsync(authState.User)
+            : null;
+    }
+}

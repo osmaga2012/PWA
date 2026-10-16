@@ -1,0 +1,259 @@
+@page "/login"
+@using System.ComponentModel.DataAnnotations
+@using PWA.Interfaces
+@layout LoginLayout
+
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Iniciar Sesion - CRM</PageTitle>
+
+<div class="login-page">
+    <div class="login-container">
+        
+        <div class="login-poster-card">
+            <MudText Typo="Typo.caption" Class="login-poster-kicker">
+                Cofradia de Pescadores de Gandia
+            </MudText>
+            <img src="imagenes/cartel-pegatinas-santos.png"
+                 alt="Cartel del programa sistema de acceso y gestion"
+                 class="login-poster-image" />
+        </div>
+
+        <div class="login-card">
+            <div class="login-header">
+                <img src="imagenes/logo-cofradia.png"
+                     alt="Logo Cofradia"
+                     class="login-logo" />
+                <MudText Typo="Typo.h4" Class="login-title">
+                    Bienvenido
+                </MudText>
+                <MudText Typo="Typo.body2" Class="login-subtitle">
+                    Inicia sesion para continuar
+                </MudText>
+            </div>
+
+            <EditForm Model="@_loginModel" OnValidSubmit="@HandleLogin">
+                <DataAnnotationsValidator />
+
+                <MudTextField @bind-Value="_loginModel.UsernameOrEmail"
+                              Label="Usuario o Correo electronico"
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Person"
+                              InputType="InputType.Text"
+                              Required="true"
+                              RequiredError="El usuario o correo es requerido"
+                              Class="mb-4"
+                              Disabled="@_isLoading"
+                              Placeholder="usuario@ejemplo.com o usuario"
+                              autocomplete="username"
+                              HelperText="Ingresa tu correo electronico o nombre de usuario" />
+
+                <MudTextField @bind-Value="_loginModel.Password"
+                              Label="Contrasena"
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@(_showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
+                              InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                              Required="true"
+                              RequiredError="La contrasena es requerida"
+                              Class="mb-2"
+                              Disabled="@_isLoading"
+                              autocomplete="current-password"
+                              AdornmentAriaLabel="Mostrar/Ocultar contrasena"
+                              OnAdornmentClick="@TogglePasswordVisibility"
+                              AdornmentColor="Color.Default" />
+
+                <div class="login-options">
+                    <MudCheckBox @bind-Value="_loginModel.RememberMe"
+                                 Label="Recordarme"
+                                 Color="Color.Primary"
+                                 Disabled="@_isLoading" />
+                    <MudLink Href="@RecoveryUrl"
+                             Class="forgot-password-link">
+                        Olvidaste tu contrasena?
+                    </MudLink>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error"
+                              Class="mb-4"
+                              Dense="true"
+                              ShowCloseIcon="true"
+                              CloseIconClicked="@(() => _errorMessage = null)">
+                        @_errorMessage
+                    </MudAlert>
+                }
+
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           Size="Size.Large"
+                           Class="login-button"
+                           Disabled="@_isLoading">
+                    @if (_isLoading)
+                    {
+                        <MudProgressCircular Size="Size.Small"
+                                             Indeterminate="true"
+                                             Class="mr-2" />
+                        <span>Iniciando sesion...</span>
+                    }
+                    else
+                    {
+                        <span>Iniciar Sesion</span>
+                    }
+                </MudButton>
+
+            </EditForm>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private LoginModel _loginModel = new();
+    private string? _errorMessage;
+    private bool _isLoading;
+    private bool _showPassword;
+
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+
+    private string RecoveryUrl
+    {
+        get
+        {
+            var email = _loginModel.UsernameOrEmail?.Trim() ?? string.Empty;
+            return IsValidEmail(email)
+                ? $"recuperar-contrasena?email={Uri.EscapeDataString(email)}"
+                : "recuperar-contrasena";
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await AuthService.GetAccessTokenAsync();
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            NavigateAfterLogin();
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            var input = _loginModel.UsernameOrEmail.Trim();
+            var isEmail = IsValidEmail(input);
+
+            Console.WriteLine($"[Login] Tipo de entrada: {(isEmail ? "Email" : "Usuario")} - Valor: {input}");
+
+            var result = await AuthService.LoginAsync(input, _loginModel.Password);
+
+            if (result.IsSuccess)
+            {
+                Console.WriteLine("[Login] Login exitoso, redirigiendo...");
+                NavigateAfterLogin();
+            }
+            else
+            {
+                _errorMessage = result.Message ?? "Error al iniciar sesion. Verifica tus credenciales.";
+                Console.WriteLine($"[Login] Error: {_errorMessage}");
+            }
+        }
+        catch (HttpRequestException httpEx)
+        {
+            _errorMessage = "No se pudo conectar con el servidor. Verifica tu conexion.";
+            Console.WriteLine($"[Login] Error HTTP: {httpEx.Message}");
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "Error inesperado. Por favor, intenta nuevamente.";
+            Console.WriteLine($"[Login] Error: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        _showPassword = !_showPassword;
+    }
+
+    private void NavigateAfterLogin()
+    {
+        var url = ResolvePostLoginUrl();
+        Console.WriteLine($"[Login] Navegando a: {url}");
+        Navigation.NavigateTo(url, replace: true);
+    }
+
+    private string ResolvePostLoginUrl()
+    {
+        if (string.IsNullOrWhiteSpace(ReturnUrl))
+        {
+            return string.Empty;
+        }
+
+        var returnUrl = ReturnUrl.Trim();
+
+        if (Uri.TryCreate(returnUrl, UriKind.Absolute, out var absoluteUri))
+        {
+            return IsInsideAppBase(absoluteUri.AbsoluteUri)
+                ? Navigation.ToBaseRelativePath(absoluteUri.AbsoluteUri)
+                : string.Empty;
+        }
+
+        if (returnUrl.StartsWith("/", StringComparison.Ordinal))
+        {
+            var basePath = new Uri(Navigation.BaseUri).AbsolutePath.TrimEnd('/');
+            var isInsideSubfolder = !string.IsNullOrWhiteSpace(basePath)
+                && returnUrl.StartsWith($"{basePath}/", StringComparison.OrdinalIgnoreCase);
+
+            return isInsideSubfolder
+                ? returnUrl[basePath.Length..].TrimStart('/')
+                : string.Empty;
+        }
+
+        return $"{returnUrl}/new/";
+    }
+
+    private bool IsInsideAppBase(string url)
+    {
+        return url.StartsWith(Navigation.BaseUri, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsValidEmail(string input)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(input);
+            return addr.Address == input;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public class LoginModel
+    {
+        [Required(ErrorMessage = "El usuario o correo es requerido")]
+        [MinLength(3, ErrorMessage = "Debe tener al menos 3 caracteres")]
+        [Display(Name = "Usuario o Email")]
+        public string UsernameOrEmail { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "La contrasena es requerida")]
+        [MinLength(6, ErrorMessage = "La contrasena debe tener al menos 6 caracteres")]
+        public string Password { get; set; } = string.Empty;
+
+        public bool RememberMe { get; set; }
+    }
+}

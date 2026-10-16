@@ -1,0 +1,248 @@
+﻿@page "/barcos"
+@attribute [Authorize]
+
+@using CRM.Dtos.Enums
+@using MudBlazor
+@using CRM.Dtos
+
+<MudItem xs="12" Class="mobile-list-page">
+
+    <div class="barcos-header">
+        <div class="barcos-header__info">
+            <MudText Typo="Typo.h6" Class="fw-bold">Flota</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                @(EsCofradia ? "Gestión general de la cofradía" : "Mis embarcaciones")
+            </MudText>
+        </div>
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Secondary"
+                       StartIcon="@Icons.Material.Filled.FileDownload"
+                       OnClick="ExportExcel">
+                Exportar
+            </MudButton>
+        </MudHidden>
+    </div>
+
+    <!-- Stats móvil: chips compactos -->
+    <MudHidden Breakpoint="Breakpoint.MdAndUp">
+        <div class="mobile-stat-chips">
+            <div class="mobile-stat-chip">
+                <MudIcon Icon="@Icons.Material.Filled.DirectionsBoat" Color="Color.Primary" Size="Size.Small" />
+                <div>
+                    <div class="mobile-stat-chip__value">@(FiltroBarcos?.Count() ?? 0)</div>
+                    <div class="mobile-stat-chip__label">@(EsCofradia ? "Total" : "Mis barcos")</div>
+                </div>
+            </div>
+            <div class="mobile-stat-chip">
+                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" />
+                <div>
+                    <div class="mobile-stat-chip__value">@(FiltroBarcos?.Count(b => !string.IsNullOrEmpty(b.Aviso)) ?? 0)</div>
+                    <div class="mobile-stat-chip__label">Con avisos</div>
+                </div>
+            </div>
+        </div>
+    </MudHidden>
+
+    <!-- Stats (solo tablet/desktop) -->
+    <MudHidden Breakpoint="Breakpoint.Xs">
+        <MudGrid Spacing="3" Class="mb-3">
+            <MudItem xs="12" sm="6">
+                <MudPaper Elevation="0" Class="barcos-stat-card">
+                    <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Size="Size.Medium">
+                        <MudIcon Icon="@Icons.Material.Filled.DirectionsBoat" />
+                    </MudAvatar>
+                    <div class="ms-3">
+                        <MudText Typo="Typo.h6" Class="fw-bold">@(FiltroBarcos?.Count() ?? 0)</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            @(EsCofradia ? "Total embarcaciones" : "Mis embarcaciones")
+                        </MudText>
+                    </div>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudPaper Elevation="0" Class="barcos-stat-card">
+                    <MudAvatar Color="Color.Warning" Variant="Variant.Filled" Size="Size.Medium">
+                        <MudIcon Icon="@Icons.Material.Filled.AssignmentLate" />
+                    </MudAvatar>
+                    <div class="ms-3">
+                        <MudText Typo="Typo.h6" Class="fw-bold">@(FiltroBarcos?.Count(b => !string.IsNullOrEmpty(b.Aviso)) ?? 0)</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Trámites pendientes</MudText>
+                    </div>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudHidden>
+
+    <!-- Buscador -->
+    <div class="mobile-search-sticky">
+        <MudPaper Elevation="0" Class="barcos-search-bar">
+            <MudTextField @bind-Value="_filtroBarco"
+                          Placeholder="Buscar por nombre, matrícula, armador..."
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Clearable="true"
+                          Immediate="true"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="flex-grow-1" />
+            <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                <MudTooltip Text="Exportar a Excel">
+                    <MudIconButton Icon="@Icons.Material.Filled.FileDownload"
+                                   Color="Color.Secondary"
+                                   Variant="Variant.Outlined"
+                                   OnClick="ExportExcel" />
+                </MudTooltip>
+            </MudHidden>
+        </MudPaper>
+    </div>
+
+    <!-- VISTA MÓVIL: lista de tarjetas -->
+    <MudHidden Breakpoint="Breakpoint.MdAndUp">
+        @if (_isLoading)
+        {
+            <div class="barcos-loading">
+                <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+            </div>
+        }
+        else if (!FiltroBarcos.Any())
+        {
+            <div class="barcos-empty">
+                <MudIcon Icon="@Icons.Material.Filled.DirectionsBoat" Style="font-size:3rem; color:#CBD5E1;" />
+                <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-2">Sin embarcaciones</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Ajusta el filtro de búsqueda</MudText>
+            </div>
+        }
+        else
+        {
+            <MudStack Spacing="2" Class="mt-2">
+                @foreach (var e in FiltroBarcos)
+                {
+                    <MudPaper Elevation="0" Class="barco-card">
+                        <div class="barco-card__top">
+                            <div class="barco-card__avatar">
+                                <MudAvatar Color="@(string.IsNullOrEmpty(e.Aviso) ? Color.Primary : Color.Warning)"
+                                           Variant="Variant.Filled" Size="Size.Medium">
+                                    <MudIcon Icon="@Icons.Material.Filled.DirectionsBoat" />
+                                </MudAvatar>
+                            </div>
+                            <div class="barco-card__info">
+                                <MudText Typo="Typo.subtitle2" Class="fw-bold">@((e.NombreB) ?? e.NombreA)</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@e.Matricula</MudText>
+                                @if (!string.IsNullOrEmpty(e.Empresa?.NombreArmador))
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@e.Empresa.NombreArmador</MudText>
+                                }
+                            </div>
+                            <div class="barco-card__badge">
+                                @if (!string.IsNullOrEmpty(e.Aviso))
+                                {
+                                    <MudChip T="string" Color="Color.Error" Size="Size.Small" Icon="@Icons.Material.Filled.Warning" Variant="Variant.Filled">
+                                        Aviso
+                                    </MudChip>
+                                }
+                                else
+                                {
+                                    <MudChip T="string" Color="Color.Success" Size="Size.Small" Icon="@Icons.Material.Filled.CheckCircle" Variant="Variant.Outlined">
+                                        Al día
+                                    </MudChip>
+                                }
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(e.Aviso))
+                        {
+                            <MudAlert Severity="Severity.Warning" Dense="true" Class="barco-card__alert">
+                                @e.Aviso
+                            </MudAlert>
+                        }
+                        <MudDivider Class="my-2" />
+                        <div class="barco-card__actions">
+                            <MudButton Variant="Variant.Text"
+                                       Color="Color.Default"
+                                       Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.Edit"
+                                       OnClick="@(() => NavigarAEditar(e.CodigoBarco))">
+                                Editar
+                            </MudButton>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       Size="Size.Small"
+                                       Class="barco-card__action--primary"
+                                       StartIcon="@Icons.Material.Filled.ReceiptLong"
+                                       OnClick="@(() => NavigarATramites(e.CodigoBarco))">
+                                Trámites
+                            </MudButton>
+                            <AuthorizeView Policy="EsAdmin">
+                                <MudButton Variant="Variant.Text"
+                                           Color="Color.Secondary"
+                                           Size="Size.Small"
+                                           StartIcon="@Icons.Material.Filled.Group"
+                                           OnClick="@(() => NavigarAUsuarios(e.CodigoBarco))">
+                                    Usuarios
+                                </MudButton>
+                            </AuthorizeView>
+                        </div>
+                    </MudPaper>
+                }
+            </MudStack>
+        }
+    </MudHidden>
+
+    <!-- VISTA DESKTOP: tabla -->
+    <MudHidden Breakpoint="Breakpoint.MdAndDown">
+        <MudPaper Elevation="0" Class="barcos-table-paper">
+            <MudTable Items="@FiltroBarcos"
+                      Hover="true"
+                      Bordered="false"
+                      Striped="true"
+                      Elevation="0"
+                      Loading="@_isLoading"
+                      AriaLabel="Listado de embarcaciones"
+                      Breakpoint="Breakpoint.Md">
+                <HeaderContent>
+                    <MudTh><span class="fw-bold text-secondary">Embarcación</span></MudTh>
+                    <MudTh><span class="fw-bold text-secondary">Matrícula</span></MudTh>
+                    <MudTh><span class="fw-bold text-secondary">Empresa / Armador</span></MudTh>
+                    <MudTh><span class="fw-bold text-secondary">Estado</span></MudTh>
+                    <MudTh Class="text-end"><span class="fw-bold text-secondary">Acciones</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Embarcación">
+                        <MudText Typo="Typo.subtitle2" Class="fw-bold">@((context.NombreB) ?? context.NombreA)</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Matrícula">
+                        <MudText Typo="Typo.body2" Class="font-monospace fw-medium">@context.Matricula</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Empresa / Armador">
+                        <MudText Typo="Typo.body2">@context.Empresa?.NombreArmador</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Estado">
+                        @if (!string.IsNullOrEmpty(context.Aviso))
+                        {
+                            <MudChip T="string" Color="Color.Error" Variant="Variant.Filled" Size="Size.Small" Icon="@Icons.Material.Filled.NewReleases">@context.Aviso</MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined" Size="Size.Small" Icon="@Icons.Material.Filled.CheckCircle">Al día</MudChip>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Acciones" Class="text-end">
+                        <MudTooltip Text="Editar">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Default" Size="Size.Small"
+                                           OnClick="@(() => NavigarAEditar(context.CodigoBarco))" />
+                        </MudTooltip>
+                        <MudTooltip Text="Trámites">
+                            <MudIconButton Icon="@Icons.Material.Filled.ReceiptLong" Color="Color.Primary" Size="Size.Small" Class="ms-1"
+                                           OnClick="@(() => NavigarATramites(context.CodigoBarco))" />
+                        </MudTooltip>
+                        <MudTooltip Text="Usuarios">
+                            <MudIconButton Icon="@Icons.Material.Filled.Group" Color="Color.Default" Size="Size.Small" Class="ms-1"
+                                           OnClick="@(() => NavigarAUsuarios(context.CodigoBarco))" />
+                        </MudTooltip>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudHidden>
+
+</MudItem>
