@@ -17,12 +17,15 @@ jobs:
     steps:
       - name: Obtener codigo
         uses: actions/checkout@v4
-        
+      - name: Descarga PWA
+        uses: actions/checout@v4
+        with:
+             path: PWA
       - name: Descargar CRM.Dtos
         uses: actions/checkout@v4
         with:
           repository: osmaga2012/CRM
-          path: CRM
+          path: CRM/CRM.Dtos
           # Necesario si CRM.Dtos es privado:
           token: ${{ secrets.CRM_DTOS_TOKEN }}
       - name: Instalar .NET
