@@ -128,10 +128,10 @@ jobs:
           print("Configuración de producción validada correctamente")
           PY
           
-       - name: Configurar API de producción
-         env:
+      - name: Configurar API de producción
+        env:
             API_BASE_URL: ${{ vars.API_BASE_URL }}
-         run: |
+        run: |
           python3 - <<'PY'
           import json
           import os
