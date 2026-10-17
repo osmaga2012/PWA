@@ -4,7 +4,7 @@ name: Desplegar Gestion Maritima en Azure
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
 
 permissions:
