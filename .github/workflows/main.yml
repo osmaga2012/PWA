@@ -83,7 +83,16 @@ jobs:
               json.dumps(config, indent=2, ensure_ascii=False),
               encoding="utf-8"
           )
+          
+          # Eliminar posibles versiones comprimidas anteriores
+          for extension in (".br", ".gz"):
+              comprimido = Path(str(destino) + extension)
+          
+              if comprimido.exists():
+                  comprimido.unlink()
+                  print("Eliminado archivo comprimido antiguo:", comprimido)
 
+          
           print("Archivo de producción:", destino.resolve())
           print("API configurada:", config["ApiSettings"]["BaseUrl"])
           PY
