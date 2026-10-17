@@ -101,8 +101,25 @@ jobs:
           for path in root.rglob("appsettings*.json"):
               print(path)
           PY
+      - name: Configurar ruta base de Azure
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
 
-            
+          index = Path("./publish/wwwroot/index.html")
+
+          if not index.is_file():
+              raise SystemExit("No se encuentra index.html")
+
+          contenido = index.read_text(encoding="utf-8")
+          contenido = contenido.replace(
+              '<base href="/new/" />',
+              '<base href="/" />'
+          )
+
+          index.write_text(contenido, encoding="utf-8")
+          PY
+    
       - name: Desplegar en Azure
         uses: Azure/static-web-apps-deploy@v1
         with:
