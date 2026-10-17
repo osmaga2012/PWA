@@ -127,7 +127,36 @@ jobs:
 
           print("Configuración de producción validada correctamente")
           PY
+          
+       - name: Configurar API de producción
+         env:
+            API_BASE_URL: ${{ vars.API_BASE_URL }}
+         run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
 
+          ruta = Path("./publish/wwwroot/new/appsettings.json")
+
+          if not ruta.is_file():
+              raise FileNotFoundError(f"No existe: {ruta}")
+
+          url = os.environ["API_BASE_URL"].strip()
+
+          if not url or "localhost" in url:
+              raise ValueError("API_BASE_URL no contiene una URL válida de producción")
+
+          config = json.loads(ruta.read_text(encoding="utf-8"))
+          config["ApiSettings"]["BaseUrl"] = url
+
+          ruta.write_text(
+              json.dumps(config, indent=2, ensure_ascii=False),
+              encoding="utf-8"
+          )
+
+          print("Configuración de producción actualizada correctamente")
+          PY
 
       - name: Desplegar en Azure
         uses: Azure/static-web-apps-deploy@v1
