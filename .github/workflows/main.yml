@@ -91,6 +91,44 @@ jobs:
           print(f"Configuración generada: {target}")
           PY
 
+      
+      - name: Validar configuración de producción
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("./publish/wwwroot/new")
+          config_path = root / "appsettings.json"
+
+          assert config_path.is_file(), "No existe appsettings.json"
+
+          config = json.loads(config_path.read_text(encoding="utf-8"))
+          url = config["ApiSettings"]["BaseUrl"]
+
+          assert url == os.environ["API_BASE_URL"], "La URL no coincide con GitHub"
+          assert url.startswith("https://"), "La API debe utilizar HTTPS"
+          assert "localhost" not in url, "La API sigue apuntando a localhost"
+
+          production = root / "appsettings.Production.json"
+
+          if production.is_file():
+              production_config = json.loads(
+                  production.read_text(encoding="utf-8")
+              )
+              production_url = production_config.get("ApiSettings", {}).get("BaseUrl")
+
+              assert not production_url or production_url == url, (
+                  "appsettings.Production.json sobrescribe la URL"
+              )
+
+          print("Configuración de producción validada correctamente")
+          PY
+
+
       - name: Desplegar en Azure
         uses: Azure/static-web-apps-deploy@v1
         with:
