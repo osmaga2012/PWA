@@ -22,16 +22,29 @@ var timeout = builder.Configuration.GetValue<int>("ApiSettings:Timeout", 30);
 var appName = builder.Configuration["ApplicationName"] ?? "CRM PWA";
 var appVersion = builder.Configuration["Version"] ?? "1.0.0";
 
-// Fallback si no está configurado
-if (string.IsNullOrEmpty(apiBaseUrl))
+if (string.IsNullOrWhiteSpace(apiBaseUrl))
 {
-    apiBaseUrl = builder.HostEnvironment.BaseAddress;
-    Console.WriteLine($"⚠️ ApiBaseUrl no configurado, usando BaseAddress: {apiBaseUrl}");
+    if (builder.HostEnvironment.IsProduction())
+    {
+        throw new InvalidOperationException(
+            "ApiSettings:BaseUrl no está configurada en producción."
+        );
+    }
+
+    apiBaseUrl = "https://localhost:7254";
 }
-else
-{
-    Console.WriteLine($"✅ Usando ApiBaseUrl configurado: {apiBaseUrl}");
-}
+
+
+//// Fallback si no está configurado
+//if (string.IsNullOrEmpty(apiBaseUrl))
+//{
+//    apiBaseUrl = builder.HostEnvironment.BaseAddress;
+//    Console.WriteLine($"⚠️ ApiBaseUrl no configurado, usando BaseAddress: {apiBaseUrl}");
+//}
+//else
+//{
+//    Console.WriteLine($"✅ Usando ApiBaseUrl configurado: {apiBaseUrl}");
+//}
 
 // Log del ambiente
 Console.WriteLine($"🌍 Entorno: {builder.HostEnvironment.Environment}");
