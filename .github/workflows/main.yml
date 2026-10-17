@@ -41,7 +41,18 @@ jobs:
         run: |
           dotnet add ./PWA/PWA.csproj reference ./CRM/CRM.Dtos/CRM.Dtos.csproj
           dotnet publish ./PWA/PWA.csproj -c Release -o ./publish -p:StaticWebAssetBasePath=/
-   
+          
+      - name: Diagnosticar estructura publicada
+        run: |
+          echo "Archivos index.html:"
+          find ./publish -name "index.html" -print
+
+          echo "Archivos appsettings.json:"
+          find ./publish -name "appsettings.json" -print
+
+          echo "Carpetas principales:"
+          ls -la ./publish
+          ls -la ./publish/wwwroot
       - name: Actualizar y verificar appsettings
         env:
           API_BASE_URL: ${{ vars.API_BASE_URL }}
