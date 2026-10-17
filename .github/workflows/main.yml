@@ -36,12 +36,12 @@ jobs:
           echo "Proyectos disponibles:"
           find ./CRM -name "*.csproj"
 
+      
       - name: Compilar y publicar Blazor
         run: |
           dotnet add ./PWA/PWA.csproj reference ./CRM/CRM.Dtos/CRM.Dtos.csproj
-          dotnet publish ./PWA/PWA.csproj -c Release -o ./publish
-            
-      
+          dotnet publish ./PWA/PWA.csproj -c Release -o ./publish -p:StaticWebAssetBasePath=/
+   
       - name: Actualizar y verificar appsettings
         env:
           API_BASE_URL: ${{ vars.API_BASE_URL }}
