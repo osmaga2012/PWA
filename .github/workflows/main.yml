@@ -41,54 +41,42 @@ jobs:
           dotnet add ./PWA/PWA.csproj reference ./CRM/CRM.Dtos/CRM.Dtos.csproj
           dotnet publish ./PWA/PWA.csproj -c Release -o ./publish
             
+      
       - name: Actualizar y verificar appsettings
         env:
-           API_BASE_URL: ${{ vars.API_BASE_URL }}
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
         run: |
-            python3 - <<'PY'
-            import json
-            import os
-            from pathlib import Path
-  
-            url = os.environ.get("API_BASE_URL", "").strip()
-  
-            if not url or "localhost" in url:
-                raise SystemExit(
-                    "ERROR: API_BASE_URL no está configurada correctamente"
-                )
-  
-            root = Path("./publish/wwwroot/new")
-  
-            if not (root / "index.html").is_file():
-                raise SystemExit(
-                    f"ERROR: No existe index.html en {root}"
-                )
-  
-            archivo = root / "appsettings.json"
-  
-            if not archivo.is_file():
-                raise SystemExit(
-                    f"ERROR: No existe {archivo}"
-                )
-  
-            config = json.loads(archivo.read_text(encoding="utf-8"))
-            config["ApiSettings"]["BaseUrl"] = url
-  
-            archivo.write_text(
-                json.dumps(config, indent=2, ensure_ascii=False),
-                encoding="utf-8"
-            )
-  
-            comprobacion = json.loads(
-                archivo.read_text(encoding="utf-8")
-            )
-  
-            assert comprobacion["ApiSettings"]["BaseUrl"] == url
-  
-            print("Configuración actualizada correctamente")
-            print("URL de API:", url)
-            print("Archivo:", archivo.resolve())
-            PY
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          url = os.environ.get("API_BASE_URL", "").strip()
+
+          if not url or "localhost" in url:
+              raise SystemExit("API_BASE_URL no es válida")
+
+          origen = Path("./PWA/wwwroot/appsettings.json")
+          destino = Path("./publish/wwwroot/new/appsettings.json")
+
+          if not origen.is_file():
+              raise SystemExit(f"No existe el archivo original: {origen}")
+
+          if not (destino.parent / "index.html").is_file():
+              raise SystemExit("No se encuentra index.html en la carpeta de despliegue")
+
+          config = json.loads(origen.read_text(encoding="utf-8"))
+          config["ApiSettings"]["BaseUrl"] = url
+
+          destino.write_text(
+              json.dumps(config, indent=2, ensure_ascii=False),
+              encoding="utf-8"
+          )
+
+          print("Archivo de producción:", destino.resolve())
+          print("API configurada:", config["ApiSettings"]["BaseUrl"])
+          PY
+
       
       - name: Verificar artefacto final
         env:
