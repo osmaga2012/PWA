@@ -89,6 +89,30 @@ jobs:
           PY
 
       
+      - name: Crear archivo de diagnóstico
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("./publish/wwwroot")
+
+          diagnostic = {
+              "deployment": "diagnostico-20261017",
+              "apiBaseUrl": os.environ["API_BASE_URL"]
+          }
+
+          (root / "diagnostico-deploy.json").write_text(
+              json.dumps(diagnostic, indent=2),
+              encoding="utf-8"
+          )
+
+          print("Diagnóstico creado correctamente")
+          PY
+
       - name: Verificar artefacto final
         env:
           API_BASE_URL: ${{ vars.API_BASE_URL }}
