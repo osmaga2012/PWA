@@ -108,6 +108,6 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: upload
-          app_location: ./publish/wwwroot/new
+          app_location: ./publish/wwwroot
           output_location: ''
           skip_app_build: true
