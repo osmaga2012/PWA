@@ -57,7 +57,7 @@ jobs:
               raise SystemExit("API_BASE_URL no es válida")
 
           origen = Path("./PWA/wwwroot/appsettings.json")
-          destino = Path("./publish/wwwroot/new/appsettings.json")
+          destino = Path("./publish/wwwroot/appsettings.json")
 
           if not origen.is_file():
               raise SystemExit(f"No existe el archivo original: {origen}")
@@ -87,7 +87,7 @@ jobs:
           import os
           from pathlib import Path
 
-          root = Path("./publish/wwwroot/new")
+          root = Path("./publish/wwwroot")
           archivo = root / "appsettings.json"
 
           config = json.loads(archivo.read_text(encoding="utf-8"))
