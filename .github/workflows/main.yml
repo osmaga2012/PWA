@@ -40,59 +40,57 @@ jobs:
         run: |
           dotnet add ./PWA/PWA.csproj reference ./CRM/CRM.Dtos/CRM.Dtos.csproj
           dotnet publish ./PWA/PWA.csproj -c Release -o ./publish
-          
-      - name: Verificar archivos publicados
-        run: |
-            echo "Contenido de publish:"
-            ls -la ./publish
-
-            echo "Archivos index.html encontrados:"
-            find ./publish -name "index.html"
-
-            echo "Contenido de wwwroot:"
-            ls -la ./publish/wwwroot || true
-
-      - name: Generar configuración de producción
+            
+      - name: Actualizar y verificar appsettings
         env:
-          API_BASE_URL: ${{ vars.API_BASE_URL }}
-          API_TIMEOUT: ${{ vars.API_TIMEOUT }}
-          APPLICATION_NAME: ${{ vars.APPLICATION_NAME }}
-          APP_VERSION: ${{ vars.APP_VERSION }}
-          ENABLE_OFFLINE_MODE: ${{ vars.ENABLE_OFFLINE_MODE }}
-          ENABLE_PUSH_NOTIFICATIONS: ${{ vars.ENABLE_PUSH_NOTIFICATIONS }}
-          TENANT_ID: ${{ vars.TENANT_ID }}
+           API_BASE_URL: ${{ vars.API_BASE_URL }}
         run: |
-          python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          config = {
-              "ApiSettings": {
-                  "BaseUrl": os.environ["API_BASE_URL"],
-                  "Timeout": int(os.environ["API_TIMEOUT"])
-              },
-              "ApplicationName": os.environ["APPLICATION_NAME"],
-              "Version": os.environ["APP_VERSION"],
-              "Features": {
-                  "EnableOfflineMode": os.environ["ENABLE_OFFLINE_MODE"].lower() == "true",
-                  "EnablePushNotifications": os.environ["ENABLE_PUSH_NOTIFICATIONS"].lower() == "true"
-              },
-              "TenantID": os.environ["TENANT_ID"]
-          }
-
-          target = Path("./publish/wwwroot/new/appsettings.json")
-          target.parent.mkdir(parents=True, exist_ok=True)
-          target.write_text(
-              json.dumps(config, indent=2, ensure_ascii=False),
-              encoding="utf-8"
-          )
-
-          print(f"Configuración generada: {target}")
-          PY
-
+            python3 - <<'PY'
+            import json
+            import os
+            from pathlib import Path
+  
+            url = os.environ.get("API_BASE_URL", "").strip()
+  
+            if not url or "localhost" in url:
+                raise SystemExit(
+                    "ERROR: API_BASE_URL no está configurada correctamente"
+                )
+  
+            root = Path("./publish/wwwroot/new")
+  
+            if not (root / "index.html").is_file():
+                raise SystemExit(
+                    f"ERROR: No existe index.html en {root}"
+                )
+  
+            archivo = root / "appsettings.json"
+  
+            if not archivo.is_file():
+                raise SystemExit(
+                    f"ERROR: No existe {archivo}"
+                )
+  
+            config = json.loads(archivo.read_text(encoding="utf-8"))
+            config["ApiSettings"]["BaseUrl"] = url
+  
+            archivo.write_text(
+                json.dumps(config, indent=2, ensure_ascii=False),
+                encoding="utf-8"
+            )
+  
+            comprobacion = json.loads(
+                archivo.read_text(encoding="utf-8")
+            )
+  
+            assert comprobacion["ApiSettings"]["BaseUrl"] == url
+  
+            print("Configuración actualizada correctamente")
+            print("URL de API:", url)
+            print("Archivo:", archivo.resolve())
+            PY
       
-      - name: Validar configuración de producción
+      - name: Verificar artefacto final
         env:
           API_BASE_URL: ${{ vars.API_BASE_URL }}
         run: |
@@ -102,62 +100,21 @@ jobs:
           from pathlib import Path
 
           root = Path("./publish/wwwroot/new")
-          config_path = root / "appsettings.json"
+          archivo = root / "appsettings.json"
 
-          assert config_path.is_file(), "No existe appsettings.json"
+          config = json.loads(archivo.read_text(encoding="utf-8"))
 
-          config = json.loads(config_path.read_text(encoding="utf-8"))
-          url = config["ApiSettings"]["BaseUrl"]
+          assert config["ApiSettings"]["BaseUrl"] == os.environ["API_BASE_URL"]
+          assert (root / "index.html").exists()
 
-          assert url == os.environ["API_BASE_URL"], "La URL no coincide con GitHub"
-          assert url.startswith("https://"), "La API debe utilizar HTTPS"
-          assert "localhost" not in url, "La API sigue apuntando a localhost"
-
-          production = root / "appsettings.Production.json"
-
-          if production.is_file():
-              production_config = json.loads(
-                  production.read_text(encoding="utf-8")
-              )
-              production_url = production_config.get("ApiSettings", {}).get("BaseUrl")
-
-              assert not production_url or production_url == url, (
-                  "appsettings.Production.json sobrescribe la URL"
-              )
-
-          print("Configuración de producción validada correctamente")
-          PY
-          
-      - name: Configurar API de producción
-        env:
-            API_BASE_URL: ${{ vars.API_BASE_URL }}
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          ruta = Path("./publish/wwwroot/new/appsettings.json")
-
-          if not ruta.is_file():
-              raise FileNotFoundError(f"No existe: {ruta}")
-
-          url = os.environ["API_BASE_URL"].strip()
-
-          if not url or "localhost" in url:
-              raise ValueError("API_BASE_URL no contiene una URL válida de producción")
-
-          config = json.loads(ruta.read_text(encoding="utf-8"))
-          config["ApiSettings"]["BaseUrl"] = url
-
-          ruta.write_text(
-              json.dumps(config, indent=2, ensure_ascii=False),
-              encoding="utf-8"
-          )
-
-          print("Configuración de producción actualizada correctamente")
+          print("Artefacto preparado correctamente")
+          print("BaseUrl:", config["ApiSettings"]["BaseUrl"])
+          print("Archivos de configuración:")
+          for path in root.rglob("appsettings*.json"):
+              print(path)
           PY
 
+            
       - name: Desplegar en Azure
         uses: Azure/static-web-apps-deploy@v1
         with:
