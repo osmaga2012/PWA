@@ -101,7 +101,7 @@ namespace PWA.Pages
 
 
             string [] includeBarcos = new string[] { "Empresa" };
-            List<EmpresasDto> empresas = (await servicioEmpresa.GetAllAsync("api/Empresas", null, null))?.ToList() ?? new List<EmpresasDto>();
+            List<EmpresasDto> empresas = (await servicioEmpresa.GetAllAsync("api/Empresa", null, null))?.ToList() ?? new List<EmpresasDto>();
 
             barcos = empresas.Select(x=>x.Barco).ToList();
         }
