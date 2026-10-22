@@ -194,7 +194,64 @@ jobs:
           THEME_COLOR: ${{ vars.CLIENT_B_THEME_COLOR }}
           SHOW_LOGIN_IMAGE: ${{ vars.CLIENT_B_SHOW_LOGIN_IMAGE }}
           SHOW_HOME_IMAGE: ${{ vars.CLIENT_B_SHOW_HOME_IMAGE }}
-        run: python3 .github-configure-client.py
+        run: |
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+
+          root = Path("./site")
+          settings = root / "appsettings.json"
+          index = root / "index.html"
+          if not settings.is_file() or not index.is_file():
+              raise SystemExit("El artefacto no contiene appsettings.json e index.html")
+
+          api = os.environ.get("API_BASE_URL", "").strip().rstrip("/")
+          tenant = os.environ.get("TENANT_ID", "").strip()
+          if not api.startswith("https://") or "localhost" in api.lower():
+              raise SystemExit("API_BASE_URL debe ser una URL HTTPS de producción")
+          if not tenant:
+              raise SystemExit("TENANT_ID está vacío")
+
+          cfg = json.loads(settings.read_text(encoding="utf-8"))
+          cfg.setdefault("ApiSettings", {})["BaseUrl"] = api
+          cfg["TenantID"] = tenant
+          brand = cfg.setdefault("Branding", {})
+          brand["CompanyName"] = os.environ.get("COMPANY_NAME", "").strip() or brand.get("CompanyName", "CRM")
+          brand["ApplicationTitle"] = os.environ.get("APP_TITLE", "").strip() or brand.get("ApplicationTitle", "CRM")
+          brand["LogoPath"] = os.environ.get("LOGO_PATH", "").strip()
+          brand["LoginImagePath"] = os.environ.get("LOGIN_IMAGE_PATH", "").strip()
+          brand["HomeImagePath"] = os.environ.get("HOME_IMAGE_PATH", "").strip()
+          brand["PrimaryColor"] = os.environ.get("PRIMARY_COLOR", "").strip() or "#03173d"
+          brand["SecondaryColor"] = os.environ.get("SECONDARY_COLOR", "").strip() or "#594ae2"
+          brand["ThemeColor"] = os.environ.get("THEME_COLOR", "").strip() or brand["PrimaryColor"]
+
+          def flag(name, default):
+              value = os.environ.get(name, "").strip().lower()
+              if value in ("true", "1", "yes", "si", "sí"): return True
+              if value in ("false", "0", "no"): return False
+              return default
+
+          brand["ShowLoginImage"] = flag("SHOW_LOGIN_IMAGE", False)
+          brand["ShowHomeImage"] = flag("SHOW_HOME_IMAGE", False)
+          settings.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+          html = index.read_text(encoding="utf-8")
+          html, n = re.subn(r'(<meta\s+name="theme-color"\s+content=")[^"]*("\\s*/?>)',
+                            lambda m: m.group(1) + brand["ThemeColor"] + m.group(2),
+                            html, count=1, flags=re.IGNORECASE)
+          if n == 0:
+              html = html.replace("</head>", f'<meta name="theme-color" content="{brand["ThemeColor"]}" />\n</head>', 1)
+          index.write_text(html, encoding="utf-8")
+
+          for target in (settings, index):
+              for suffix in (".br", ".gz"):
+                  compressed = Path(str(target) + suffix)
+                  if compressed.exists():
+                      compressed.unlink()
+
+          assert cfg["TenantID"] == tenant and cfg["ApiSettings"]["BaseUrl"] == api
+          print(f"Artefacto configurado para tenant {tenant}; API {api}")
+          PY
         shell: bash
 
       - name: Deploy client B via FTPS
