@@ -217,21 +217,18 @@ jobs:
           brand = cfg.setdefault("Branding", {})
           brand["CompanyName"] = os.environ.get("COMPANY_NAME", "").strip() or brand.get("CompanyName", "CRM")
           brand["ApplicationTitle"] = os.environ.get("APP_TITLE", "").strip() or brand.get("ApplicationTitle", "CRM")
-          brand["LogoPath"] = os.environ.get("LOGO_PATH", "").strip() or brand.get("LogoPath", "")
-          brand["LoginImagePath"] = os.environ.get("LOGIN_IMAGE_PATH", "").strip() or brand.get("LoginImagePath", "")
-          brand["HomeImagePath"] = os.environ.get("HOME_IMAGE_PATH", "").strip() or brand.get("HomeImagePath", "")
-          brand["PrimaryColor"] = os.environ.get("PRIMARY_COLOR", "").strip() or "#03173d"
-          brand["SecondaryColor"] = os.environ.get("SECONDARY_COLOR", "").strip() or "#594ae2"
-          brand["ThemeColor"] = os.environ.get("THEME_COLOR", "").strip() or brand["PrimaryColor"]
+          # El cliente B no utiliza logo ni imágenes: no heredar valores del cliente A.
+          brand["LogoPath"] = ""
+          brand["LoginImagePath"] = ""
+          brand["HomeImagePath"] = ""
+          brand["ShowLoginImage"] = False
+          brand["ShowHomeImage"] = False
 
-          def flag(name, default):
-              value = os.environ.get(name, "").strip().lower()
-              if value in ("true", "1", "yes", "si", "sí"): return True
-              if value in ("false", "0", "no"): return False
-              return default
+          # Mantener la paleta actual de la PWA para esta primera publicación de B.
+          brand["PrimaryColor"] = "#03173d"
+          brand["SecondaryColor"] = "#594ae2"
+          brand["ThemeColor"] = "#03173d"
 
-          brand["ShowLoginImage"] = flag("SHOW_LOGIN_IMAGE", bool(brand.get("ShowLoginImage", False)))
-          brand["ShowHomeImage"] = flag("SHOW_HOME_IMAGE", bool(brand.get("ShowHomeImage", False)))
           settings.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
           html = index.read_text(encoding="utf-8")
@@ -252,6 +249,26 @@ jobs:
           print(f"Artefacto configurado para tenant {tenant}; API {api}")
           PY
         shell: bash
+
+      - name: Validate client B branding before FTPS
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          config = json.loads(Path("./site/appsettings.json").read_text(encoding="utf-8"))
+          brand = config.get("Branding", {})
+          assert brand.get("LogoPath", "") == "", "B no debe tener logo"
+          assert brand.get("LoginImagePath", "") == "", "B no debe tener imagen de acceso"
+          assert brand.get("HomeImagePath", "") == "", "B no debe tener imagen de portada"
+          assert brand.get("ShowLoginImage") is False, "La imagen de acceso debe estar desactivada"
+          assert brand.get("ShowHomeImage") is False, "La imagen de portada debe estar desactivada"
+          assert brand.get("PrimaryColor") == "#03173d", "El color principal debe conservarse"
+          assert brand.get("SecondaryColor") == "#594ae2", "El color secundario debe conservarse"
+          assert brand.get("ThemeColor") == "#03173d", "El color del tema debe conservarse"
+          print("Configuración de B validada: sin imágenes y con la paleta actual.")
+          PY
 
       - name: Deploy client B via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
