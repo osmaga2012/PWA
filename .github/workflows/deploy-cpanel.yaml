@@ -1,0 +1,193 @@
+
+name: Desplegar PWA en cPanel
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-pwa-cpanel
+  cancel-in-progress: false
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Descargar repositorio PWA
+      - name: Descargar PWA
+        uses: actions/checkout@v4
+        with:
+          path: PWA
+
+      # 2. Descargar CRM.Dtos
+      - name: Descargar CRM.Dtos
+        uses: actions/checkout@v4
+        with:
+          repository: osmaga2012/CRM
+          path: CRM
+          token: ${{ secrets.CRM_DTOS_TOKEN }}
+
+      # 3. Instalar .NET 10
+      - name: Instalar .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # 4. Compilar para la raíz del dominio
+      - name: Compilar y publicar Blazor
+        run: |
+          dotnet add ./PWA/PWA.csproj reference ./CRM/CRM.Dtos/CRM.Dtos.csproj
+
+          dotnet publish ./PWA/PWA.csproj \
+            -c Release \
+            -o ./publish \
+            -p:StaticWebAssetBasePath=/
+
+      # 5. Preparar configuración específica del cliente
+      - name: Configurar appsettings del cliente
+        env:
+          API_BASE_URL: ${{ vars.CPANEL_API_BASE_URL }}
+          TENANT_ID: ${{ vars.CPANEL_TENANT_ID }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("./publish/wwwroot")
+          archivo = root / "appsettings.json"
+
+          if not (root / "index.html").is_file():
+              raise SystemExit("No existe index.html")
+
+          if not archivo.is_file():
+              raise SystemExit("No existe appsettings.json")
+
+          api_url = os.environ.get("API_BASE_URL", "").strip()
+          tenant_id = os.environ.get("TENANT_ID", "").strip()
+
+          if not api_url.startswith("https://"):
+              raise SystemExit("CPANEL_API_BASE_URL no es válida")
+
+          if not tenant_id:
+              raise SystemExit("CPANEL_TENANT_ID no está configurado")
+
+          config = json.loads(
+              archivo.read_text(encoding="utf-8")
+          )
+
+          config.setdefault("ApiSettings", {})
+          config["ApiSettings"]["BaseUrl"] = api_url.rstrip("/")
+          config["TenantID"] = tenant_id
+
+          archivo.write_text(
+              json.dumps(
+                  config,
+                  indent=2,
+                  ensure_ascii=False
+              ),
+              encoding="utf-8"
+          )
+
+          # Eliminar variantes comprimidas desactualizadas
+          for ext in (".br", ".gz"):
+              comprimido = Path(str(archivo) + ext)
+
+              if comprimido.exists():
+                  comprimido.unlink()
+                  print("Eliminado:", comprimido)
+
+          print("API:", config["ApiSettings"]["BaseUrl"])
+          print("TenantID:", config["TenantID"])
+          PY
+
+      # 6. Configurar la ruta base del sitio
+      - name: Configurar ruta base
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          root = Path("./publish/wwwroot")
+          index = root / "index.html"
+
+          contenido = index.read_text(encoding="utf-8")
+
+          contenido, cambios = re.subn(
+              r'<base\s+href=["\'][^"\']*["\']\s*/?>',
+              '<base href="/" />',
+              contenido,
+              count=1,
+              flags=re.IGNORECASE
+          )
+
+          if cambios != 1:
+              raise SystemExit(
+                  "No se encontró la etiqueta base en index.html"
+              )
+
+          index.write_text(contenido, encoding="utf-8")
+
+          # Eliminar compresiones antiguas del index
+          for ext in (".br", ".gz"):
+              comprimido = Path(str(index) + ext)
+
+              if comprimido.exists():
+                  comprimido.unlink()
+
+          print("Ruta base configurada: /")
+          PY
+
+      # 7. Comprobar contenido antes del despliegue
+      - name: Verificar publicación
+        env:
+          API_BASE_URL: ${{ vars.CPANEL_API_BASE_URL }}
+          TENANT_ID: ${{ vars.CPANEL_TENANT_ID }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("./publish/wwwroot")
+
+          assert (root / "index.html").is_file()
+          assert (root / "_framework").is_dir()
+
+          config = json.loads(
+              (root / "appsettings.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+
+          assert (
+              config["ApiSettings"]["BaseUrl"]
+              == os.environ["API_BASE_URL"].strip().rstrip("/")
+          )
+
+          assert (
+              config["TenantID"]
+              == os.environ["TENANT_ID"].strip()
+          )
+
+          print("Publicación validada")
+          print("API:", config["ApiSettings"]["BaseUrl"])
+          print("TenantID:", config["TenantID"])
+          PY
+
+      # 8. Publicar en cPanel utilizando FTPS
+      - name: Publicar en cPanel
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.CPANEL_FTP_HOST }}
+          username: ${{ secrets.CPANEL_FTP_USER }}
+          password: ${{ secrets.CPANEL_FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./publish/wwwroot/
+          server-dir: ${{ vars.CPANEL_FTP_DIR }}
+          dry-run: true
+          log-level: standard
