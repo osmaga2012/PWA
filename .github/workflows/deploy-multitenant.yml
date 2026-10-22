@@ -181,7 +181,7 @@ jobs:
 
       - name: Apply client B configuration
         env:
-          API_BASE_URL: ${{ vars.CLIENT_B_API_BASE_URL }}
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
           TENANT_ID: ${{ vars.TENANT_ID }}
           COMPANY_NAME: ${{ vars.CLIENT_B_COMPANY_NAME }}
           APP_TITLE: ${{ vars.CLIENT_B_APP_TITLE }}
