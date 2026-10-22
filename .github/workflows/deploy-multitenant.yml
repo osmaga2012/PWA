@@ -1,0 +1,155 @@
+name: Build once and deploy PWA to two tenants
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - '**.cs'
+      - '**.razor'
+      - '**.css'
+      - '**.json'
+      - '**.html'
+      - '**.js'
+      - '**.csproj'
+      - '.github/workflows/deploy-multitenant.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-pwa-multitenant
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PWA
+        uses: actions/checkout@v4
+        with:
+          path: PWA
+
+      - name: Checkout CRM.Dtos
+        uses: actions/checkout@v4
+        with:
+          repository: osmaga2012/CRM
+          path: CRM
+          token: ${{ secrets.CRM_DTOS_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Add DTO project reference and publish once
+        shell: bash
+        run: |
+          dotnet add ./PWA/PWA.csproj reference ./CRM/CRM.Dtos/CRM.Dtos.csproj
+          dotnet publish ./PWA/PWA.csproj -c Release -o ./publish -p:StaticWebAssetBasePath=/
+
+      - name: Validate common publish output
+        run: |
+          test -f ./publish/wwwroot/index.html
+          test -f ./publish/wwwroot/appsettings.json
+          test -d ./publish/wwwroot/_framework
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("./publish/wwwroot/appsettings.json")
+          config = json.loads(p.read_text(encoding="utf-8"))
+          assert "TenantID" in config
+          assert "Branding" in config
+          print("Publicación común válida")
+          PY
+
+      - name: Upload common artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pwa-publish
+          path: ./publish/wwwroot/
+          if-no-files-found: error
+          retention-days: 2
+
+  deploy-client-a:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download common artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pwa-publish
+          path: ./site
+
+      - name: Apply client A configuration
+        env:
+          API_BASE_URL: ${{ vars.CLIENT_A_API_BASE_URL }}
+          TENANT_ID: ${{ vars.CLIENT_A_TENANT_ID }}
+          COMPANY_NAME: ${{ vars.CLIENT_A_COMPANY_NAME }}
+          APP_TITLE: ${{ vars.CLIENT_A_APP_TITLE }}
+          LOGO_PATH: ${{ vars.CLIENT_A_LOGO_PATH }}
+          LOGIN_IMAGE_PATH: ${{ vars.CLIENT_A_LOGIN_IMAGE_PATH }}
+          HOME_IMAGE_PATH: ${{ vars.CLIENT_A_HOME_IMAGE_PATH }}
+          PRIMARY_COLOR: ${{ vars.CLIENT_A_PRIMARY_COLOR }}
+          SECONDARY_COLOR: ${{ vars.CLIENT_A_SECONDARY_COLOR }}
+          THEME_COLOR: ${{ vars.CLIENT_A_THEME_COLOR }}
+          SHOW_LOGIN_IMAGE: ${{ vars.CLIENT_A_SHOW_LOGIN_IMAGE }}
+          SHOW_HOME_IMAGE: ${{ vars.CLIENT_A_SHOW_HOME_IMAGE }}
+        run: python3 .github-configure-client.py
+        shell: bash
+
+      - name: Deploy client A via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ vars.CLIENT_A_FTP_HOST }}
+          username: ${{ vars.CLIENT_A_FTP_USER }}
+          password: ${{ secrets.CLIENT_A_FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./site/
+          server-dir: ${{ vars.CLIENT_A_FTP_DIR }}
+          dangerous-clean-slate: false
+          dry-run: false
+          log-level: standard
+
+  deploy-client-b:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download common artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pwa-publish
+          path: ./site
+
+      - name: Apply client B configuration
+        env:
+          API_BASE_URL: ${{ vars.CLIENT_B_API_BASE_URL }}
+          TENANT_ID: ${{ vars.CLIENT_B_TENANT_ID }}
+          COMPANY_NAME: ${{ vars.CLIENT_B_COMPANY_NAME }}
+          APP_TITLE: ${{ vars.CLIENT_B_APP_TITLE }}
+          LOGO_PATH: ${{ vars.CLIENT_B_LOGO_PATH }}
+          LOGIN_IMAGE_PATH: ${{ vars.CLIENT_B_LOGIN_IMAGE_PATH }}
+          HOME_IMAGE_PATH: ${{ vars.CLIENT_B_HOME_IMAGE_PATH }}
+          PRIMARY_COLOR: ${{ vars.CLIENT_B_PRIMARY_COLOR }}
+          SECONDARY_COLOR: ${{ vars.CLIENT_B_SECONDARY_COLOR }}
+          THEME_COLOR: ${{ vars.CLIENT_B_THEME_COLOR }}
+          SHOW_LOGIN_IMAGE: ${{ vars.CLIENT_B_SHOW_LOGIN_IMAGE }}
+          SHOW_HOME_IMAGE: ${{ vars.CLIENT_B_SHOW_HOME_IMAGE }}
+        run: python3 .github-configure-client.py
+        shell: bash
+
+      - name: Deploy client B via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ vars.CLIENT_B_FTP_HOST }}
+          username: ${{ vars.CLIENT_B_FTP_USER }}
+          password: ${{ secrets.CLIENT_B_FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./site/
+          server-dir: ${{ vars.CLIENT_B_FTP_DIR }}
+          dangerous-clean-slate: false
+          dry-run: false
+          log-level: standard
