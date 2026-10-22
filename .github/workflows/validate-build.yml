@@ -77,4 +77,5 @@ jobs:
 
       - name: Build summary
         if: success()
-        run: echo "VALIDACIÓN CORRECTA: restore, publish y comprobaciones del artefacto completados. No se ha realizado ningún despliegue."
+        run: |
+          echo "VALIDACIÓN CORRECTA: restore, publish y comprobaciones del artefacto completados. No se ha realizado ningún despliegue."
