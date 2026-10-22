@@ -69,7 +69,7 @@ builder.Services.AddMudServices(config =>
 // ============================================
 // CONFIGURACIÓN DE HttpClient
 // ============================================
-builder.Services.AddScoped<AuthorizedHttpClientHandler>();
+builder.Services.AddTransient<AuthorizedHttpClientHandler>();
 
 builder.Services.AddHttpClient("ApiClient", client =>
 {
