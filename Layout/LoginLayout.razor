@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
+@inject PWA.Branding.BrandingOptions Branding
 
-<MudThemeProvider />
+<MudThemeProvider Theme="@Branding.Theme" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
