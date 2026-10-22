@@ -188,5 +188,5 @@ jobs:
           port: 21
           local-dir: ./publish/wwwroot/
           server-dir: ${{ vars.GANDIA_FTP_DIR }}
-          dry-run: TRUE
+          dry-run: false
           log-level: standard
