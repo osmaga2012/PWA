@@ -224,7 +224,7 @@ jobs:
           brand["CompanyName"] = company_name
           brand["ApplicationTitle"] = app_title
           # El cliente B no utiliza logo ni imágenes: no heredar valores del cliente A.
-          brand["LogoPath"] = ""
+          brand["LogoPath"] = os.environ.get("LOGO_PATH", "").strip()
           brand["LoginImagePath"] = ""
           brand["HomeImagePath"] = ""
           brand["ShowLoginImage"] = False
