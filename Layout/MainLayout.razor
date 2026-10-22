@@ -6,8 +6,9 @@
 @using PWA.Layout.Menus
 
 @inject NavigationManager NavManager
+@inject PWA.Branding.BrandingOptions Branding
 
-<MudThemeProvider />
+<MudThemeProvider Theme="@Branding.Theme" />
 <MudBreakpointProvider />
 <MudPopoverProvider />
 <MudDialogProvider />
