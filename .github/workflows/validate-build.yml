@@ -1,0 +1,80 @@
+name: Validate PWA build (no deployment)
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '**.cs'
+      - '**.razor'
+      - '**.css'
+      - '**.json'
+      - '**.html'
+      - '**.js'
+      - '**.csproj'
+      - '.github/workflows/validate-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Restore and publish .NET 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PWA
+        uses: actions/checkout@v4
+        with:
+          path: PWA
+
+      - name: Checkout CRM (CRM.Dtos project)
+        uses: actions/checkout@v4
+        with:
+          repository: osmaga2012/CRM
+          path: CRM
+          token: ${{ secrets.CRM_DTOS_TOKEN }}
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Show .NET SDK
+        run: dotnet --info
+
+      - name: Restore dependencies
+        run: dotnet restore ./PWA/PWA.csproj
+
+      - name: Publish in Release mode
+        run: dotnet publish ./PWA/PWA.csproj --configuration Release --no-restore --output ./publish -p:StaticWebAssetBasePath=/
+
+      - name: Validate published files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f ./publish/wwwroot/index.html
+          test -f ./publish/wwwroot/appsettings.json
+          test -d ./publish/wwwroot/_framework
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("./publish/wwwroot")
+          config_path = root / "appsettings.json"
+          config = json.loads(config_path.read_text(encoding="utf-8"))
+
+          if "TenantID" in config:
+              raise SystemExit("ERROR: appsettings.json del artefacto común contiene TenantID; debe inyectarse durante el despliegue.")
+          if "Branding" not in config:
+              raise SystemExit("ERROR: falta la sección Branding en appsettings.json.")
+
+          print("OK: index.html, appsettings.json y _framework existen.")
+          print("OK: appsettings.json es JSON válido, contiene Branding y no fija TenantID.")
+          print(f"Archivos publicados: {sum(1 for p in root.rglob('*') if p.is_file())}")
+          PY
+
+      - name: Build summary
+        if: success()
+        run: echo "VALIDACIÓN CORRECTA: restore, publish y comprobaciones del artefacto completados. No se ha realizado ningún despliegue."
