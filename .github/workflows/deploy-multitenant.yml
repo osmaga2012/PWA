@@ -83,7 +83,7 @@ jobs:
 
       - name: Apply client A configuration
         env:
-          API_BASE_URL: ${{ vars.CLIENT_A_API_BASE_URL }}
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
           TENANT_ID: ${{ vars.GANDIA_TENANT_ID }}
           COMPANY_NAME: ${{ vars.CLIENT_A_COMPANY_NAME }}
           APP_TITLE: ${{ vars.CLIENT_A_APP_TITLE }}
@@ -158,13 +158,13 @@ jobs:
       - name: Deploy client A via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
-          server: ${{ vars.CLIENT_A_FTP_HOST }}
-          username: ${{ vars.CLIENT_A_FTP_USER }}
-          password: ${{ secrets.CLIENT_A_FTP_PASSWORD }}
+          server: ${{ vars.GANDIA_FTP_HOST }}
+          username: ${{ vars.GANDIA_FTP_USER }}
+          password: ${{ vars.GANDIA_FTP_PASSWORD }}
           protocol: ftps
           port: 21
           local-dir: ./site/
-          server-dir: ${{ vars.CLIENT_A_FTP_DIR }}
+          server-dir: ${{ vars.GANDIA_FTP_DIR }}
           dangerous-clean-slate: false
           dry-run: false
           log-level: standard
