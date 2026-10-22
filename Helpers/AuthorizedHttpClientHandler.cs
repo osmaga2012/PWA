@@ -34,10 +34,11 @@ public sealed class AuthorizedHttpClientHandler : DelegatingHandler
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
 
+        Console.WriteLine($"Tenant: {_tenantId}");
+
         // 2. Adjuntar Cabecera de Tenant
         if (!request.Headers.Contains("X-Tenant-Id"))
         {
-            Console.WriteLine($"Tenant: {_tenantId}");
             request.Headers.Add("X-Tenant-Id", _tenantId);
         }
 
