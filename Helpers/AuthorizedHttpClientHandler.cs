@@ -18,6 +18,8 @@ public sealed class AuthorizedHttpClientHandler : DelegatingHandler
         _jsRuntime = jsRuntime;
         // Obtenemos el TenantID de la configuración (o valor por defecto)
         _tenantId = configuration["TenantID"] ?? "NOTENANT";
+
+        Console.WriteLine("[HANDLER] Constructor ejecutado");
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(
