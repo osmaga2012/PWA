@@ -181,7 +181,7 @@ jobs:
 
       - name: Apply client B configuration
         env:
-          API_BASE_URL: ${{ vars.CLIENT_B_API_BASE_URL }}
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
           TENANT_ID: ${{ vars.TENANT_ID }}
           COMPANY_NAME: ${{ vars.CLIENT_B_COMPANY_NAME }}
           APP_TITLE: ${{ vars.CLIENT_B_APP_TITLE }}
@@ -215,8 +215,14 @@ jobs:
           cfg.setdefault("ApiSettings", {})["BaseUrl"] = api
           cfg["TenantID"] = tenant
           brand = cfg.setdefault("Branding", {})
-          brand["CompanyName"] = os.environ.get("COMPANY_NAME", "").strip() or brand.get("CompanyName", "CRM")
-          brand["ApplicationTitle"] = os.environ.get("APP_TITLE", "").strip() or brand.get("ApplicationTitle", "CRM")
+          company_name = os.environ.get("COMPANY_NAME", "").strip()
+          app_title = os.environ.get("APP_TITLE", "").strip()
+          if not company_name:
+              raise SystemExit("CLIENT_B_COMPANY_NAME está vacío; se cancela para evitar heredar la marca de otro cliente")
+          if not app_title:
+              raise SystemExit("CLIENT_B_APP_TITLE está vacío; se cancela para evitar heredar la marca de otro cliente")
+          brand["CompanyName"] = company_name
+          brand["ApplicationTitle"] = app_title
           # El cliente B no utiliza logo ni imágenes: no heredar valores del cliente A.
           brand["LogoPath"] = ""
           brand["LoginImagePath"] = ""
@@ -273,13 +279,13 @@ jobs:
       - name: Deploy client B via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
-          server: ${{ vars.CLIENT_B_FTP_HOST }}
-          username: ${{ vars.CLIENT_B_FTP_USER }}
-          password: ${{ secrets.CLIENT_B_FTP_PASSWORD }}
+          server: ${{ vars.CPANEL_FTP_HOST }}
+          username: ${{ vars.CPANEL_FTP_USER }}
+          password: ${{ secrets.CPANEL_FTP_PASSWORD }}
           protocol: ftps
           port: 21
           local-dir: ./site/
-          server-dir: ${{ vars.CLIENT_B_FTP_DIR }}
+          server-dir: ${{ vars.CPANEL_FTP_DIR }}
           dangerous-clean-slate: false
           dry-run: false
           log-level: standard
