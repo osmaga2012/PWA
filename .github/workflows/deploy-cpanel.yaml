@@ -144,8 +144,8 @@ jobs:
       # 7. Comprobar contenido antes del despliegue
       - name: Verificar publicación
         env:
-          API_BASE_URL: ${{ vars.CPANEL_API_BASE_URL }}
-          TENANT_ID: ${{ vars.CPANEL_TENANT_ID }}
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          TENANT_ID: ${{ vars.TENANT_ID }}
         run: |
           python3 - <<'PY'
           import json
