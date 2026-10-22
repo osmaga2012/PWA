@@ -43,7 +43,7 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Add DTO project reference and publish once
+      - name: Publish PWA once with CRM DTO project reference
         shell: bash
         run: |
           dotnet publish ./PWA/PWA.csproj -c Release -o ./publish -p:StaticWebAssetBasePath=/
