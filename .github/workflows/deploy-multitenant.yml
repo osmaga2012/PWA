@@ -46,7 +46,6 @@ jobs:
       - name: Add DTO project reference and publish once
         shell: bash
         run: |
-          dotnet add ./PWA/PWA.csproj reference ./CRM/CRM.Dtos/CRM.Dtos.csproj
           dotnet publish ./PWA/PWA.csproj -c Release -o ./publish -p:StaticWebAssetBasePath=/
 
       - name: Validate common publish output
@@ -59,7 +58,7 @@ jobs:
           from pathlib import Path
           p = Path("./publish/wwwroot/appsettings.json")
           config = json.loads(p.read_text(encoding="utf-8"))
-          assert "TenantID" in config
+          assert "TenantID" not in config, "El artefacto común no debe contener un TenantID fijo"
           assert "Branding" in config
           print("Publicación común válida")
           PY
@@ -85,7 +84,7 @@ jobs:
       - name: Apply client A configuration
         env:
           API_BASE_URL: ${{ vars.CLIENT_A_API_BASE_URL }}
-          TENANT_ID: ${{ vars.CLIENT_A_TENANT_ID }}
+          TENANT_ID: ${{ vars.GANDIA_TENANT_ID }}
           COMPANY_NAME: ${{ vars.CLIENT_A_COMPANY_NAME }}
           APP_TITLE: ${{ vars.CLIENT_A_APP_TITLE }}
           LOGO_PATH: ${{ vars.CLIENT_A_LOGO_PATH }}
@@ -183,7 +182,7 @@ jobs:
       - name: Apply client B configuration
         env:
           API_BASE_URL: ${{ vars.CLIENT_B_API_BASE_URL }}
-          TENANT_ID: ${{ vars.CLIENT_B_TENANT_ID }}
+          TENANT_ID: ${{ vars.TENANT_ID }}
           COMPANY_NAME: ${{ vars.CLIENT_B_COMPANY_NAME }}
           APP_TITLE: ${{ vars.CLIENT_B_APP_TITLE }}
           LOGO_PATH: ${{ vars.CLIENT_B_LOGO_PATH }}
