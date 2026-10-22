@@ -117,7 +117,7 @@ jobs:
 
           contenido, cambios = re.subn(
               r'<base\s+href=["\'][^"\']*["\']\s*/?>',
-              '<base href="/new" />',
+              '<base href="/new/" />',
               contenido,
               count=1,
               flags=re.IGNORECASE
