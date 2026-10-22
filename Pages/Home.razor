@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @attribute [Authorize]
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
@@ -9,6 +9,7 @@
 @inject IDialogService DialogService
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
+@inject PWA.Branding.BrandingOptions Branding
 
 <PageTitle>Inicio - CRM</PageTitle>
 
@@ -157,12 +158,13 @@
                     </div>
                 </MudPaper>
 
-                <MudText Typo="Typo.caption" Class="section-label mt-4">PROGRAMA</MudText>
-                <MudPaper Elevation="0" Class="cofradia-program-card cofradia-program-card--mobile">
-                    <img src="imagenes/cartel-pegatinas-santos.png"
-                         alt="Cartel del programa sistema de acceso y gestion"
-                         class="cofradia-program-image" />
-                </MudPaper>
+                @if (Branding.ShowHomeImage && !string.IsNullOrWhiteSpace(Branding.HomeImagePath))
+                {
+                    <MudText Typo="Typo.caption" Class="section-label mt-4">@Branding.CompanyName</MudText>
+                    <MudPaper Elevation="0" Class="cofradia-program-card cofradia-program-card--mobile">
+                        <img src="@Branding.HomeImagePath" alt="@Branding.CompanyName" class="cofradia-program-image" />
+                    </MudPaper>
+                }
 
                 @* FAB específico del Dashboard *@
                 @*            <MudFab Color="Color.Primary"
