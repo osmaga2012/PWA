@@ -24,7 +24,7 @@ var tenantId = builder.Configuration["TenantID"]?.Trim();
 
 if (string.IsNullOrWhiteSpace(tenantId))
 {
-    throw new InvalidOperationException("TenantID no está configurado en wwwroot/appsettings.json.");
+    throw new InvalidOperationException("TenantID no está configurado. Comprueba que GitHub Actions lo inyecta en appsettings.json durante el despliegue.");
 }
 
 if (string.IsNullOrWhiteSpace(apiBaseUrl))
