@@ -273,13 +273,13 @@ jobs:
       - name: Deploy client B via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
-          server: ${{ vars.CLIENT_B_FTP_HOST }}
-          username: ${{ vars.CLIENT_B_FTP_USER }}
-          password: ${{ secrets.CLIENT_B_FTP_PASSWORD }}
+          server: ${{ vars.CPANEL_FTP_HOST }}
+          username: ${{ vars.CPANEL_FTP_USER }}
+          password: ${{ secrets.CPANEL_FTP_PASSWORD }}
           protocol: ftps
           port: 21
           local-dir: ./site/
-          server-dir: ${{ vars.CLIENT_B_FTP_DIR }}
+          server-dir: ${{ vars.CPANEL_FTP_DIR }}
           dangerous-clean-slate: false
           dry-run: false
           log-level: standard
