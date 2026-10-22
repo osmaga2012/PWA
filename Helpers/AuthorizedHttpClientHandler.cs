@@ -37,7 +37,7 @@ public sealed class AuthorizedHttpClientHandler : DelegatingHandler
         // 2. Adjuntar Cabecera de Tenant
         if (!request.Headers.Contains("X-Tenant-Id"))
         {
-            Console.writeline($"Tenant: {_tenantId}")
+            Console.WriteLine($"Tenant: {_tenantId}");
             request.Headers.Add("X-Tenant-Id", _tenantId);
         }
 
