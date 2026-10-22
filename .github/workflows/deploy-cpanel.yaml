@@ -182,9 +182,9 @@ jobs:
       - name: Publicar en cPanel
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
-          server: ${{ secrets.CPANEL_FTP_HOST }}
-          username: ${{ secrets.CPANEL_FTP_USER }}
-          password: ${{ secrets.CPANEL_FTP_PASSWORD }}
+          server: ${{ vars.CPANEL_FTP_HOST }}
+          username: ${{ vars.CPANEL_FTP_USER }}
+          password: ${{ vars.CPANEL_FTP_PASSWORD }}
           protocol: ftps
           port: 21
           local-dir: ./publish/wwwroot/
