@@ -138,11 +138,11 @@ jobs:
           settings.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
 
           html = index.read_text(encoding="utf-8")
-          html, n = re.subn(r'(<meta\\s+name=["\\']theme-color["\\']\\s+content=["\\'])[^"\\']*(["\\']\\s*/?>)',
-                            lambda m: m.group(1) + brand["ThemeColor"] + m.group(2),
-                            html, count=1, flags=re.IGNORECASE)
-          if n == 0:
-              html = html.replace("</head>", f'<meta name="theme-color" content="{brand["ThemeColor"]}" />\\n</head>', 1)
+          html = re.sub(r'<meta name="theme-color" content="[^"]*"\\s*/>',
+                        '<meta name="theme-color" content="' + brand["ThemeColor"] + '" />',
+                        html, count=1)
+          if 'name="theme-color"' not in html:
+              html = html.replace("</head>", '<meta name="theme-color" content="' + brand["ThemeColor"] + '" />\\n</head>', 1)
           index.write_text(html, encoding="utf-8")
 
           # La configuración se genera después del publish: elimina copias comprimidas obsoletas.
@@ -236,11 +236,11 @@ jobs:
           settings.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
           html = index.read_text(encoding="utf-8")
-          html, n = re.subn(r'(<meta\s+name="theme-color"\s+content=")[^"]*("\\s*/?>)',
-                            lambda m: m.group(1) + brand["ThemeColor"] + m.group(2),
-                            html, count=1, flags=re.IGNORECASE)
-          if n == 0:
-              html = html.replace("</head>", f'<meta name="theme-color" content="{brand["ThemeColor"]}" />\n</head>', 1)
+          html = re.sub(r'<meta name="theme-color" content="[^"]*"\\s*/>',
+                        '<meta name="theme-color" content="' + brand["ThemeColor"] + '" />',
+                        html, count=1)
+          if 'name="theme-color"' not in html:
+              html = html.replace("</head>", '<meta name="theme-color" content="' + brand["ThemeColor"] + '" />\\n</head>', 1)
           index.write_text(html, encoding="utf-8")
 
           for target in (settings, index):
