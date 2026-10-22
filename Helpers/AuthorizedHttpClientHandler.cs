@@ -21,27 +21,32 @@ public sealed class AuthorizedHttpClientHandler : DelegatingHandler
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
+    HttpRequestMessage request,
+    CancellationToken cancellationToken)
+{
+    Console.WriteLine(
+        $"[HTTP Handler] {request.Method} {request.RequestUri}");
+
+    Console.WriteLine($"[HTTP Handler] TenantID configurado: {_tenantId}");
+
+    var token = await _jsRuntime.InvokeAsync<string?>(
+        "localStorage.getItem",
+        cancellationToken,
+        "access_token");
+
+    if (!string.IsNullOrWhiteSpace(token))
     {
-        var token = await _jsRuntime.InvokeAsync<string?>(
-            "localStorage.getItem",
-            cancellationToken,
-            "access_token");
-
-        if (!string.IsNullOrWhiteSpace(token))
-        {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        }
-
-        Console.WriteLine($"Tenant: {_tenantId}");
-
-        // 2. Adjuntar Cabecera de Tenant
-        if (!request.Headers.Contains("X-Tenant-Id"))
-        {
-            request.Headers.Add("X-Tenant-Id", _tenantId);
-        }
-
-        return await base.SendAsync(request, cancellationToken);
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
     }
+
+    request.Headers.Remove("X-Tenant-Id");
+    request.Headers.TryAddWithoutValidation("X-Tenant-Id", _tenantId);
+
+    Console.WriteLine(
+        $"[HTTP Handler] X-Tenant-Id enviado: " +
+        $"{request.Headers.GetValues("X-Tenant-Id").FirstOrDefault()}");
+
+    return await base.SendAsync(request, cancellationToken);
+}
 }
