@@ -2,11 +2,6 @@
 name: Desplegar Gestion Maritima en Azure
 
 on:
-  push:
-    branches:
-      - master
-    paths-ignore:
-      - '.github/workflows/**'
   workflow_dispatch:
 
 permissions:
