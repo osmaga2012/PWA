@@ -189,5 +189,5 @@ jobs:
           port: 21
           local-dir: ./publish/wwwroot/
           server-dir: ${{ vars.CPANEL_FTP_DIR }}
-          dry-run: true
+          dry-run: false
           log-level: standard
