@@ -31,6 +31,12 @@ namespace PWA.Servicios
             _authenticationStateProvider = authenticationStateProvider;
             _authStateProvider = (CustomAuthStateProvider)authenticationStateProvider;
             _jsRuntime = jsRuntime;
+
+            Console.WriteLine(
+        $"[AuthService] BaseAddress: {_httpClient.BaseAddress}");
+
+    Console.WriteLine(
+        $"[AuthService] Tipo HttpClient: {_httpClient.GetType().FullName}");
         }
 
         public async Task<LoginResultDto> LoginAsync(string email, string password)
@@ -39,6 +45,8 @@ namespace PWA.Servicios
 
             try
             {
+                Console.WriteLine("[AuthService] Ejecutando LoginAsync");
+            
                 var loginRequest = new { Email = email, Password = password };
                 var response = await _httpClient.PostAsJsonAsync("/api/Auth/login", loginRequest);
 
