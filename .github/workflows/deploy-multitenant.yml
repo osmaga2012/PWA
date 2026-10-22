@@ -2,6 +2,16 @@ name: Build once and deploy PWA to two tenants
 
 on:
   workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: "Qué cliente desplegar"
+        required: true
+        type: choice
+        options:
+          - client-b
+          - client-a
+          - both
+        default: client-b
   push:
     branches:
       - master
@@ -72,6 +82,7 @@ jobs:
           retention-days: 2
 
   deploy-client-a:
+    if: github.event_name == 'push' || inputs.deploy_target == 'client-a' || inputs.deploy_target == 'both'
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -170,6 +181,7 @@ jobs:
           log-level: standard
 
   deploy-client-b:
+    if: github.event_name == 'push' || inputs.deploy_target == 'client-b' || inputs.deploy_target == 'both'
     needs: build
     runs-on: ubuntu-latest
     steps:
