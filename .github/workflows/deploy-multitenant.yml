@@ -135,7 +135,7 @@ jobs:
 
           brand["ShowLoginImage"] = flag("SHOW_LOGIN_IMAGE", False)
           brand["ShowHomeImage"] = flag("SHOW_HOME_IMAGE", False)
-          settings.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+          settings.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
           html = index.read_text(encoding="utf-8")
           html = re.sub(r'<meta name="theme-color" content="[^"]*"\s*/>',
