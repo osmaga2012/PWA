@@ -265,7 +265,8 @@ jobs:
 
           config = json.loads(Path("./site/appsettings.json").read_text(encoding="utf-8"))
           brand = config.get("Branding", {})
-          assert brand.get("LogoPath", "") == "", "B no debe tener logo"
+          assert brand.get("LogoPath", "").endswith("logo-mazarron.png"), "La ruta del logo de B no es correcta"
+          assert brand.get("LogoPath", "") != "", "B debe tener un logo configurado"
           assert brand.get("LoginImagePath", "") == "", "B no debe tener imagen de acceso"
           assert brand.get("HomeImagePath", "") == "", "B no debe tener imagen de portada"
           assert brand.get("ShowLoginImage") is False, "La imagen de acceso debe estar desactivada"
