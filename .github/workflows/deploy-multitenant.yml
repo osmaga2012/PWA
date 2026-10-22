@@ -119,9 +119,9 @@ jobs:
           brand = cfg.setdefault("Branding", {})
           brand["CompanyName"] = os.environ.get("COMPANY_NAME", "").strip() or brand.get("CompanyName", "CRM")
           brand["ApplicationTitle"] = os.environ.get("APP_TITLE", "").strip() or brand.get("ApplicationTitle", "CRM")
-          brand["LogoPath"] = os.environ.get("LOGO_PATH", "").strip()
-          brand["LoginImagePath"] = os.environ.get("LOGIN_IMAGE_PATH", "").strip()
-          brand["HomeImagePath"] = os.environ.get("HOME_IMAGE_PATH", "").strip()
+          brand["LogoPath"] = os.environ.get("LOGO_PATH", "").strip() or brand.get("LogoPath", "")
+          brand["LoginImagePath"] = os.environ.get("LOGIN_IMAGE_PATH", "").strip() or brand.get("LoginImagePath", "")
+          brand["HomeImagePath"] = os.environ.get("HOME_IMAGE_PATH", "").strip() or brand.get("HomeImagePath", "")
           brand["PrimaryColor"] = os.environ.get("PRIMARY_COLOR", "").strip() or "#03173d"
           brand["SecondaryColor"] = os.environ.get("SECONDARY_COLOR", "").strip() or "#594ae2"
           brand["ThemeColor"] = os.environ.get("THEME_COLOR", "").strip() or brand["PrimaryColor"]
@@ -132,8 +132,8 @@ jobs:
               if value in ("false", "0", "no"): return False
               return default
 
-          brand["ShowLoginImage"] = flag("SHOW_LOGIN_IMAGE", False)
-          brand["ShowHomeImage"] = flag("SHOW_HOME_IMAGE", False)
+          brand["ShowLoginImage"] = flag("SHOW_LOGIN_IMAGE", bool(brand.get("ShowLoginImage", False)))
+          brand["ShowHomeImage"] = flag("SHOW_HOME_IMAGE", bool(brand.get("ShowHomeImage", False)))
           settings.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
           html = index.read_text(encoding="utf-8")
@@ -217,9 +217,9 @@ jobs:
           brand = cfg.setdefault("Branding", {})
           brand["CompanyName"] = os.environ.get("COMPANY_NAME", "").strip() or brand.get("CompanyName", "CRM")
           brand["ApplicationTitle"] = os.environ.get("APP_TITLE", "").strip() or brand.get("ApplicationTitle", "CRM")
-          brand["LogoPath"] = os.environ.get("LOGO_PATH", "").strip()
-          brand["LoginImagePath"] = os.environ.get("LOGIN_IMAGE_PATH", "").strip()
-          brand["HomeImagePath"] = os.environ.get("HOME_IMAGE_PATH", "").strip()
+          brand["LogoPath"] = os.environ.get("LOGO_PATH", "").strip() or brand.get("LogoPath", "")
+          brand["LoginImagePath"] = os.environ.get("LOGIN_IMAGE_PATH", "").strip() or brand.get("LoginImagePath", "")
+          brand["HomeImagePath"] = os.environ.get("HOME_IMAGE_PATH", "").strip() or brand.get("HomeImagePath", "")
           brand["PrimaryColor"] = os.environ.get("PRIMARY_COLOR", "").strip() or "#03173d"
           brand["SecondaryColor"] = os.environ.get("SECONDARY_COLOR", "").strip() or "#594ae2"
           brand["ThemeColor"] = os.environ.get("THEME_COLOR", "").strip() or brand["PrimaryColor"]
@@ -230,8 +230,8 @@ jobs:
               if value in ("false", "0", "no"): return False
               return default
 
-          brand["ShowLoginImage"] = flag("SHOW_LOGIN_IMAGE", False)
-          brand["ShowHomeImage"] = flag("SHOW_HOME_IMAGE", False)
+          brand["ShowLoginImage"] = flag("SHOW_LOGIN_IMAGE", bool(brand.get("ShowLoginImage", False)))
+          brand["ShowHomeImage"] = flag("SHOW_HOME_IMAGE", bool(brand.get("ShowHomeImage", False)))
           settings.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
           html = index.read_text(encoding="utf-8")
