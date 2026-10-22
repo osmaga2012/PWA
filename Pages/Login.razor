@@ -5,26 +5,27 @@
 
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
+@inject PWA.Branding.BrandingOptions Branding
 
-<PageTitle>Iniciar Sesion - CRM</PageTitle>
+<PageTitle>Iniciar sesión - @Branding.ApplicationTitle</PageTitle>
 
-<div class="login-page">
+<div class="login-page" style="background: linear-gradient(135deg, @Branding.PrimaryColor 0%, @Branding.SecondaryColor 100%);">
     <div class="login-container">
         
         <div class="login-poster-card">
-            <MudText Typo="Typo.caption" Class="login-poster-kicker">
-                Cofradia de Pescadores de Gandia
-            </MudText>
-            <img src="imagenes/cartel-pegatinas-santos.png"
-                 alt="Cartel del programa sistema de acceso y gestion"
-                 class="login-poster-image" />
+            @if (Branding.ShowLoginImage && !string.IsNullOrWhiteSpace(Branding.LoginImagePath))
+            {
+                <MudText Typo="Typo.caption" Class="login-poster-kicker">@Branding.CompanyName</MudText>
+                <img src="@Branding.LoginImagePath" alt="@Branding.CompanyName" class="login-poster-image" />
+            }
         </div>
 
         <div class="login-card">
             <div class="login-header">
-                <img src="imagenes/logo-cofradia.png"
-                     alt="Logo Cofradia"
-                     class="login-logo" />
+                @if (!string.IsNullOrWhiteSpace(Branding.LogoPath))
+                {
+                    <img src="@Branding.LogoPath" alt="@Branding.CompanyName" class="login-logo" />
+                }
                 <MudText Typo="Typo.h4" Class="login-title">
                     Bienvenido
                 </MudText>

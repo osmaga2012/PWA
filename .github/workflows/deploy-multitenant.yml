@@ -1,0 +1,297 @@
+name: Build once and deploy PWA to two tenants
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: "Qué cliente desplegar"
+        required: true
+        type: choice
+        options:
+          - client-b
+          - client-a
+          - both
+        default: client-b
+  push:
+    branches:
+      - master
+    paths:
+      - '**.cs'
+      - '**.razor'
+      - '**.css'
+      - '**.json'
+      - '**.html'
+      - '**.js'
+      - '**.csproj'
+      - '.github/workflows/deploy-multitenant.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-pwa-multitenant
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PWA
+        uses: actions/checkout@v4
+        with:
+          path: PWA
+
+      - name: Checkout CRM.Dtos
+        uses: actions/checkout@v4
+        with:
+          repository: osmaga2012/CRM
+          path: CRM
+          token: ${{ secrets.CRM_DTOS_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish PWA once with CRM DTO project reference
+        shell: bash
+        run: |
+          dotnet publish ./PWA/PWA.csproj -c Release -o ./publish -p:StaticWebAssetBasePath=/
+
+      - name: Validate common publish output
+        run: |
+          test -f ./publish/wwwroot/index.html
+          test -f ./publish/wwwroot/appsettings.json
+          test -d ./publish/wwwroot/_framework
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("./publish/wwwroot/appsettings.json")
+          config = json.loads(p.read_text(encoding="utf-8"))
+          assert "TenantID" not in config, "El artefacto común no debe contener un TenantID fijo"
+          assert "Branding" in config
+          print("Publicación común válida")
+          PY
+
+      - name: Upload common artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pwa-publish
+          path: ./publish/wwwroot/
+          if-no-files-found: error
+          retention-days: 2
+
+  deploy-client-a:
+    if: github.event_name == 'push' || inputs.deploy_target == 'client-a' || inputs.deploy_target == 'both'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download common artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pwa-publish
+          path: ./site
+
+      - name: Apply client A configuration
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          TENANT_ID: ${{ vars.GANDIA_TENANT_ID }}
+          COMPANY_NAME: ${{ vars.CLIENT_A_COMPANY_NAME }}
+          APP_TITLE: ${{ vars.CLIENT_A_APP_TITLE }}
+          LOGO_PATH: ${{ vars.CLIENT_A_LOGO_PATH }}
+          LOGIN_IMAGE_PATH: ${{ vars.CLIENT_A_LOGIN_IMAGE_PATH }}
+          HOME_IMAGE_PATH: ${{ vars.CLIENT_A_HOME_IMAGE_PATH }}
+          PRIMARY_COLOR: ${{ vars.CLIENT_A_PRIMARY_COLOR }}
+          SECONDARY_COLOR: ${{ vars.CLIENT_A_SECONDARY_COLOR }}
+          THEME_COLOR: ${{ vars.CLIENT_A_THEME_COLOR }}
+          SHOW_LOGIN_IMAGE: ${{ vars.CLIENT_A_SHOW_LOGIN_IMAGE }}
+          SHOW_HOME_IMAGE: ${{ vars.CLIENT_A_SHOW_HOME_IMAGE }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+
+          root = Path("./site")
+          settings = root / "appsettings.json"
+          index = root / "index.html"
+          if not settings.is_file() or not index.is_file():
+              raise SystemExit("El artefacto no contiene appsettings.json e index.html")
+
+          api = os.environ.get("API_BASE_URL", "").strip().rstrip("/")
+          tenant = os.environ.get("TENANT_ID", "").strip()
+          if not api.startswith("https://") or "localhost" in api.lower():
+              raise SystemExit("API_BASE_URL debe ser una URL HTTPS de producción")
+          if not tenant:
+              raise SystemExit("TENANT_ID está vacío")
+
+          cfg = json.loads(settings.read_text(encoding="utf-8"))
+          cfg.setdefault("ApiSettings", {})["BaseUrl"] = api
+          cfg["TenantID"] = tenant
+          brand = cfg.setdefault("Branding", {})
+          brand["CompanyName"] = os.environ.get("COMPANY_NAME", "").strip() or brand.get("CompanyName", "CRM")
+          brand["ApplicationTitle"] = os.environ.get("APP_TITLE", "").strip() or brand.get("ApplicationTitle", "CRM")
+          brand["LogoPath"] = os.environ.get("LOGO_PATH", "").strip() or brand.get("LogoPath", "")
+          brand["LoginImagePath"] = os.environ.get("LOGIN_IMAGE_PATH", "").strip() or brand.get("LoginImagePath", "")
+          brand["HomeImagePath"] = os.environ.get("HOME_IMAGE_PATH", "").strip() or brand.get("HomeImagePath", "")
+          brand["PrimaryColor"] = os.environ.get("PRIMARY_COLOR", "").strip() or "#03173d"
+          brand["SecondaryColor"] = os.environ.get("SECONDARY_COLOR", "").strip() or "#594ae2"
+          brand["ThemeColor"] = os.environ.get("THEME_COLOR", "").strip() or brand["PrimaryColor"]
+
+          def flag(name, default):
+              value = os.environ.get(name, "").strip().lower()
+              if value in ("true", "1", "yes", "si", "sí"): return True
+              if value in ("false", "0", "no"): return False
+              return default
+
+          brand["ShowLoginImage"] = flag("SHOW_LOGIN_IMAGE", bool(brand.get("ShowLoginImage", False)))
+          brand["ShowHomeImage"] = flag("SHOW_HOME_IMAGE", bool(brand.get("ShowHomeImage", False)))
+          settings.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+          html = index.read_text(encoding="utf-8")
+          html = re.sub(r'<meta name="theme-color" content="[^"]*"\s*/>',
+                        '<meta name="theme-color" content="' + brand["ThemeColor"] + '" />',
+                        html, count=1)
+          if 'name="theme-color"' not in html:
+              html = html.replace("</head>", '<meta name="theme-color" content="' + brand["ThemeColor"] + '" />\n</head>', 1)
+          index.write_text(html, encoding="utf-8")
+
+          # La configuración se genera después del publish: elimina copias comprimidas obsoletas.
+          for target in (settings, index):
+              for suffix in (".br", ".gz"):
+                  compressed = Path(str(target) + suffix)
+                  if compressed.exists(): compressed.unlink()
+
+          assert cfg["TenantID"] == tenant and cfg["ApiSettings"]["BaseUrl"] == api
+          print(f"Artefacto configurado para tenant {tenant}; API {api}")
+          PY
+        shell: bash
+
+      - name: Deploy client A via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ vars.GANDIA_FTP_HOST }}
+          username: ${{ vars.GANDIA_FTP_USER }}
+          password: ${{ vars.GANDIA_FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./site/
+          server-dir: ${{ vars.GANDIA_FTP_DIR }}
+          dangerous-clean-slate: false
+          dry-run: false
+          log-level: standard
+
+  deploy-client-b:
+    if: github.event_name == 'push' || inputs.deploy_target == 'client-b' || inputs.deploy_target == 'both'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download common artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pwa-publish
+          path: ./site
+
+      - name: Apply client B configuration
+        env:
+          API_BASE_URL: ${{ vars.CLIENT_B_API_BASE_URL }}
+          TENANT_ID: ${{ vars.TENANT_ID }}
+          COMPANY_NAME: ${{ vars.CLIENT_B_COMPANY_NAME }}
+          APP_TITLE: ${{ vars.CLIENT_B_APP_TITLE }}
+          LOGO_PATH: ${{ vars.CLIENT_B_LOGO_PATH }}
+          LOGIN_IMAGE_PATH: ${{ vars.CLIENT_B_LOGIN_IMAGE_PATH }}
+          HOME_IMAGE_PATH: ${{ vars.CLIENT_B_HOME_IMAGE_PATH }}
+          PRIMARY_COLOR: ${{ vars.CLIENT_B_PRIMARY_COLOR }}
+          SECONDARY_COLOR: ${{ vars.CLIENT_B_SECONDARY_COLOR }}
+          THEME_COLOR: ${{ vars.CLIENT_B_THEME_COLOR }}
+          SHOW_LOGIN_IMAGE: ${{ vars.CLIENT_B_SHOW_LOGIN_IMAGE }}
+          SHOW_HOME_IMAGE: ${{ vars.CLIENT_B_SHOW_HOME_IMAGE }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+
+          root = Path("./site")
+          settings = root / "appsettings.json"
+          index = root / "index.html"
+          if not settings.is_file() or not index.is_file():
+              raise SystemExit("El artefacto no contiene appsettings.json e index.html")
+
+          api = os.environ.get("API_BASE_URL", "").strip().rstrip("/")
+          tenant = os.environ.get("TENANT_ID", "").strip()
+          if not api.startswith("https://") or "localhost" in api.lower():
+              raise SystemExit("API_BASE_URL debe ser una URL HTTPS de producción")
+          if not tenant:
+              raise SystemExit("TENANT_ID está vacío")
+
+          cfg = json.loads(settings.read_text(encoding="utf-8"))
+          cfg.setdefault("ApiSettings", {})["BaseUrl"] = api
+          cfg["TenantID"] = tenant
+          brand = cfg.setdefault("Branding", {})
+          brand["CompanyName"] = os.environ.get("COMPANY_NAME", "").strip() or brand.get("CompanyName", "CRM")
+          brand["ApplicationTitle"] = os.environ.get("APP_TITLE", "").strip() or brand.get("ApplicationTitle", "CRM")
+          # El cliente B no utiliza logo ni imágenes: no heredar valores del cliente A.
+          brand["LogoPath"] = ""
+          brand["LoginImagePath"] = ""
+          brand["HomeImagePath"] = ""
+          brand["ShowLoginImage"] = False
+          brand["ShowHomeImage"] = False
+
+          # Mantener la paleta actual de la PWA para esta primera publicación de B.
+          brand["PrimaryColor"] = "#03173d"
+          brand["SecondaryColor"] = "#594ae2"
+          brand["ThemeColor"] = "#03173d"
+
+          settings.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+          html = index.read_text(encoding="utf-8")
+          html = re.sub(r'<meta name="theme-color" content="[^"]*"\s*/>',
+                        '<meta name="theme-color" content="' + brand["ThemeColor"] + '" />',
+                        html, count=1)
+          if 'name="theme-color"' not in html:
+              html = html.replace("</head>", '<meta name="theme-color" content="' + brand["ThemeColor"] + '" />\n</head>', 1)
+          index.write_text(html, encoding="utf-8")
+
+          for target in (settings, index):
+              for suffix in (".br", ".gz"):
+                  compressed = Path(str(target) + suffix)
+                  if compressed.exists():
+                      compressed.unlink()
+
+          assert cfg["TenantID"] == tenant and cfg["ApiSettings"]["BaseUrl"] == api
+          print(f"Artefacto configurado para tenant {tenant}; API {api}")
+          PY
+        shell: bash
+
+      - name: Validate client B branding before FTPS
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          config = json.loads(Path("./site/appsettings.json").read_text(encoding="utf-8"))
+          brand = config.get("Branding", {})
+          assert brand.get("LogoPath", "") == "", "B no debe tener logo"
+          assert brand.get("LoginImagePath", "") == "", "B no debe tener imagen de acceso"
+          assert brand.get("HomeImagePath", "") == "", "B no debe tener imagen de portada"
+          assert brand.get("ShowLoginImage") is False, "La imagen de acceso debe estar desactivada"
+          assert brand.get("ShowHomeImage") is False, "La imagen de portada debe estar desactivada"
+          assert brand.get("PrimaryColor") == "#03173d", "El color principal debe conservarse"
+          assert brand.get("SecondaryColor") == "#594ae2", "El color secundario debe conservarse"
+          assert brand.get("ThemeColor") == "#03173d", "El color del tema debe conservarse"
+          print("Configuración de B validada: sin imágenes y con la paleta actual.")
+          PY
+
+      - name: Deploy client B via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ vars.CLIENT_B_FTP_HOST }}
+          username: ${{ vars.CLIENT_B_FTP_USER }}
+          password: ${{ secrets.CLIENT_B_FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./site/
+          server-dir: ${{ vars.CLIENT_B_FTP_DIR }}
+          dangerous-clean-slate: false
+          dry-run: false
+          log-level: standard

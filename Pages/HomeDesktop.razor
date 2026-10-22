@@ -1,4 +1,5 @@
 ﻿@inject HttpClient Http
+@inject PWA.Branding.BrandingOptions Branding
 
 
 @if (_mostrarEditor && _barcoSeleccionado is not null)
@@ -218,14 +219,13 @@ else
             }
         </MudCard>
         </MudHidden>
-        <MudCard Outlined="true" Class="cofradia-program-card cofradia-program-card--desktop">
-            <MudText Typo="Typo.caption" Class="cofradia-program-title">
-                Programa
-            </MudText>
-            <img src="imagenes/cartel-pegatinas-santos.png"
-                 alt="Cartel del programa sistema de acceso y gestion"
-                 class="cofradia-program-image" />
-        </MudCard>
+        @if (Branding.ShowHomeImage && !string.IsNullOrWhiteSpace(Branding.HomeImagePath))
+        {
+            <MudCard Outlined="true" Class="cofradia-program-card cofradia-program-card--desktop">
+                <MudText Typo="Typo.caption" Class="cofradia-program-title">@Branding.CompanyName</MudText>
+                <img src="@Branding.HomeImagePath" alt="@Branding.CompanyName" class="cofradia-program-image" />
+            </MudCard>
+        }
     </MudItem>
 </MudGrid>
 }

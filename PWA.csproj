@@ -18,9 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="CRM.Dtos">
-      <HintPath>..\CRM\CRM.Dtos\bin\Debug\net10.0\CRM.Dtos.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\CRM\CRM.Dtos\CRM.Dtos.csproj" />
   </ItemGroup>
 
   <ItemGroup>
