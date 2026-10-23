@@ -7,6 +7,7 @@
 @inject ICurrentUserService CurrentUserService
 @inject IAuthService AuthService
 @inject NavigationManager NavigationManager
+@inject PWA.Branding.BrandingOptions Branding
 @implements IDisposable
 
 <MudAppBar Elevation="0" Class="top-menu-bar" Fixed="true">
@@ -21,6 +22,10 @@
     }
 
     <div class="app-title-block">
+        <img src="@Branding.LogoPath"
+             alt="@Branding.CompanyName"
+             class="app-logo" />
+    
         @if (_showBackButton)
         {
             <MudText Typo="Typo.subtitle2" Class="app-page-title fw-bold">
