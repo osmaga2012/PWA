@@ -11,15 +11,14 @@
 
 <div class="login-page" style="background: linear-gradient(135deg, @Branding.PrimaryColor 0%, @Branding.SecondaryColor 100%);">
     <div class="login-container">
-        
-        <div class="login-poster-card">
             @if (Branding.ShowLoginImage && !string.IsNullOrWhiteSpace(Branding.LoginImagePath))
             {
-                <MudText Typo="Typo.caption" Class="login-poster-kicker">@Branding.CompanyName</MudText>
-                <img src="@Branding.LoginImagePath" alt="@Branding.CompanyName" class="login-poster-image" />
-            }
-        </div>
-
+              
+                 <div class="login-poster-card">
+                    <MudText Typo="Typo.caption" Class="login-poster-kicker">@Branding.CompanyName</MudText>
+                    img src="@Branding.LoginImagePath" alt="@Branding.CompanyName" class="login-poster-image" />
+                 </div>
+        }
         <div class="login-card">
             <div class="login-header">
                 @if (!string.IsNullOrWhiteSpace(Branding.LogoPath))
