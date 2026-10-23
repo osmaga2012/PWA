@@ -202,6 +202,7 @@
                       AriaLabel="Listado de embarcaciones"
                       Breakpoint="Breakpoint.Md">
                 <HeaderContent>
+                    <MudTh><span class="fw-bold mud-alert-text-secondary">Cód. Barco</span></MudTh>
                     <MudTh><span class="fw-bold text-secondary">Embarcación</span></MudTh>
                     <MudTh><span class="fw-bold text-secondary">Matrícula</span></MudTh>
                     <MudTh><span class="fw-bold text-secondary">Empresa / Armador</span></MudTh>
@@ -209,6 +210,9 @@
                     <MudTh Class="text-end"><span class="fw-bold text-secondary">Acciones</span></MudTh>
                 </HeaderContent>
                 <RowTemplate>
+                    <MudTd DataLabel="CodBarco">
+                        <MudText Typo="Typo.subtitle2" Class="fw-bold">@context.CodigoBarco</MudText>
+                    </MudTd>
                     <MudTd DataLabel="Embarcación">
                         <MudText Typo="Typo.subtitle2" Class="fw-bold">@((context.NombreB) ?? context.NombreA)</MudText>
                     </MudTd>
@@ -216,7 +220,7 @@
                          <MudText Typo="Typo.body2" Class="font-monospace fw-medium">@context.Matricula</MudText> 
                     </MudTd>
                     <MudTd DataLabel="Empresa / Armador">
-                        <MudText Typo="Typo.body2">@context.Empresa?.NombreArmador</MudText>
+                        <MudText Typo="Typo.body2">@context.Empresa?.NombreArmador (@context.Empresa?.CodigoEmpresa)</MudText>
                     </MudTd>
                     <MudTd DataLabel="Estado">
                         @if (!string.IsNullOrEmpty(context.Aviso))
