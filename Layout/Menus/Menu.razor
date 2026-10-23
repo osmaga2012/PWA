@@ -6,6 +6,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ICurrentUserService CurrentUserService
 @inject IAuthService AuthService
+@inject PWA.Branding.BrandingOptions Branding
 
 <MudDrawer Open="DrawerOpen"
            OpenChanged="EventCallback.Factory.Create<bool>(this, (val) => {} /* Evita cierre automático */)"
@@ -18,8 +19,9 @@
         <div class="cofradia-sidebar-top">
             <div class="cofradia-sidebar-brand">
                 <div class="cofradia-sidebar-brand__logo">
-                    <img src="imagenes/logo-cofradia-icon.png"
-                         alt="Logotipo Cofradía de Pescadores" />
+                        <img src="@Branding.LogoPath"
+                               alt="@Branding.CompanyName"
+                               class="app-logo" />
                 </div>
                 @if (DrawerOpen)
                 {
