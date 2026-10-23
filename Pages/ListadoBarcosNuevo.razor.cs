@@ -103,14 +103,24 @@ namespace PWA.Pages
             //barcos = result?.ToList() ?? new List<BarcosDto>();
             try
             {
-                string[] includeBarcos = new string[] { "Barco" };
-                List<EmpresasDto> empresas = (await servicioEmpresa.GetAllAsync("api/Empresa", null, includeBarcos))?.ToList() ?? new List<EmpresasDto>();
+                string[] includeBarcos = { "Barco" };
 
-                barcos = empresas.Select(x => x.Barco).ToList();
+                empresas = (await servicioEmpresa.GetAllAsync(
+                    "api/Empresa",
+                    null,
+                    includeBarcos))?.ToList() ?? new List<EmpresasDto>();
 
+                barcos = empresas
+                    .Where(e => e?.Barco != null)
+                    .Select(e =>
+                    {
+                        var barco = e.Barco!;
 
-                /*var result = await servicioBarco.GetAllAsync("api/Barcos", null, null);
-                barcos = result?.ToList() ?? new List<BarcosDto>();*/
+                        barco.Empresa = e;
+
+                        return barco;
+                    })
+                    .ToList();
 
             }
             catch (Exception ex)
