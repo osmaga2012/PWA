@@ -37,7 +37,9 @@
             <div class="mobile-stat-chip">
                 <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" />
                 <div>
-                    <div class="mobile-stat-chip__value">@(FiltroBarcos?.Count(b => !string.IsNullOrEmpty(b.Aviso)) ?? 0)</div>
+                    <div class="mobile-stat-chip__value">
+                        @(FiltroBarcos?.Count(b => b != null && !string.IsNullOrEmpty(b.Aviso)) ?? 0)
+                    </div>
                     <div class="mobile-stat-chip__label">Con avisos</div>
                 </div>
             </div>
@@ -105,7 +107,7 @@
                 <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
             </div>
         }
-        else if (!FiltroBarcos.Any())
+        else if (FiltroBarcos == null || !FiltroBarcos.Any())
         {
             <div class="barcos-empty">
                 <MudIcon Icon="@Icons.Material.Filled.DirectionsBoat" Style="font-size:3rem; color:#CBD5E1;" />
