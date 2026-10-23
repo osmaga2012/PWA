@@ -131,7 +131,7 @@
                             <div class="barco-card__info">
                                 <MudText Typo="Typo.subtitle2" Class="fw-bold">@((e.NombreB) ?? e.NombreA)</MudText>
                                 <MudText Typo="Typo.caption" Color="Color.Secondary">@e.Matricula</MudText>
-                                @if (!string.IsNullOrEmpty(e.Empresa?.NombreArmador))
+                                @if (e!=null && !string.IsNullOrEmpty(e.Empresa?.NombreArmador))
                                 {
                                     <MudText Typo="Typo.caption" Color="Color.Secondary">@e.Empresa.NombreArmador</MudText>
                                 }
@@ -213,7 +213,7 @@
                         <MudText Typo="Typo.subtitle2" Class="fw-bold">@((context.NombreB) ?? context.NombreA)</MudText>
                     </MudTd>
                     <MudTd DataLabel="Matrícula">
-                        <!-- <MudText Typo="Typo.body2" Class="font-monospace fw-medium">@context.Matricula</MudText> -->
+                         <MudText Typo="Typo.body2" Class="font-monospace fw-medium">@context.Matricula</MudText> 
                     </MudTd>
                     <MudTd DataLabel="Empresa / Armador">
                         <!-- <MudText Typo="Typo.body2">@context.Empresa?.NombreArmador</MudText> -->

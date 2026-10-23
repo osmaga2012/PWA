@@ -84,8 +84,8 @@ namespace PWA.Pages
         {
             get
             {
-                //var source = barcos ?? Enumerable.Empty<BarcosDto>();
-                var source = (barcos ?? new List<BarcosDto>())
+                var source = barcos ?? Enumerable.Empty<BarcosDto>();
+                var source1 = (barcos ?? new List<BarcosDto>())
                                     .Where(b => b != null);
 
                 if (string.IsNullOrWhiteSpace(_filtroBarco))
@@ -98,27 +98,40 @@ namespace PWA.Pages
 
         private async Task CargarBarcos()
         {
-            ////string[] includesEmpresas = new string[] { "Barco" };
-            ////var result = await servicioBarco.GetAllAsync("api/Barcos", null, null);
-            ////barcos = result?.ToList() ?? new List<BarcosDto>();
+            //string[] includesEmpresas = new string[] { "Barco" };
+            //var result = await servicioBarco.GetAllAsync("api/Barcos", null, null);
+            //barcos = result?.ToList() ?? new List<BarcosDto>();
+            try
+            {
+                string[] includeBarcos = new string[] { "Barco" };
+                List<EmpresasDto> empresas = (await servicioEmpresa.GetAllAsync("api/Empresa", null, includeBarcos))?.ToList() ?? new List<EmpresasDto>();
+
+                barcos = empresas.Select(x => x.Barco).ToList();
 
 
-            //string [] includeBarcos = new string[] { "Empresa" };
-            //List<EmpresasDto> empresas = (await servicioEmpresa.GetAllAsync("api/Empresa", null, null))?.ToList() ?? new List<EmpresasDto>();
+                /*var result = await servicioBarco.GetAllAsync("api/Barcos", null, null);
+                barcos = result?.ToList() ?? new List<BarcosDto>();*/
 
-            //barcos = empresas.Select(x=>x.Barco).ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error fetching barcos: {ex.Message}");
+                throw;
+            }
 
-            var resultado = await servicioEmpresa.GetAllAsync(
-                                                    "api/Empresa",
-                                                    null,
-                                                    null);
 
-            var empresas = resultado?.ToList() ?? new List<EmpresasDto>();
 
-            barcos = empresas
-                .Where(e => e?.Barco != null)
-                .Select(e => e!.Barco!)
-                .ToList();
+            //var resultado = await servicioEmpresa.GetAllAsync(
+            //                                        "api/Empresa",
+            //                                        null,
+            //                                        null);
+
+            //var empresas = resultado?.ToList() ?? new List<EmpresasDto>();
+
+            //barcos = empresas
+            //    .Where(e => e?.Barco != null)
+            //    .Select(e => e!.Barco!)
+            //    .ToList();
         }
 
         private async Task LoadUserProfile()
