@@ -98,7 +98,7 @@ namespace PWA.Pages
 
         private async Task CargarBarcos()
         {
-            //string[] includesEmpresas = new string[] { "Barco" };
+            //string[] includesEmpresas = new string[] { "Barcos" };
             //var result = await servicioBarco.GetAllAsync("api/Barcos", null, null);
             //barcos = result?.ToList() ?? new List<BarcosDto>();
             try
