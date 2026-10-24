@@ -96,20 +96,47 @@ namespace PWA.Pages
                 }
                 // Como solo hay una fila de configuración y la actualizamos, siempre es un UPDATE
 
-                if (response != null) // Asume que UpdateAsync devuelve el DTO actualizado o null en caso de error
+                if (response?.Success == true)
                 {
-                    Snackbar.Add("Configuración guardada correctamente.", Severity.Success);
+                    if (response.Data is JsonElement data)
+                    {
+                        configuracion = data.Deserialize<ConfiguracionDto>(
+                            new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            }) ?? configuracion;
+                    }
+                    else if (response.Data is ConfiguracionDto dto)
+                    {
+                        configuracion = dto;
+                    }
 
-                    configuracion = ((JsonElement)response.Data).Deserialize<ConfiguracionDto>();
-                                    //?? new ConfiguracionDto();
 
-                    //configuracion = (ConfiguracionDto)response.Data; // Actualiza el modelo local con la respuesta de la API
-                    InicializarIntervalo();
+                    Snackbar.Add(
+                        "Configuración guardada correctamente.",
+                        Severity.Success);
                 }
                 else
                 {
-                    Snackbar.Add($"Error al guardar la configuración. {response.Message}", Severity.Error);
+                    Snackbar.Add(
+                        $"Error al guardar la configuración. {response?.Message}",
+                        Severity.Error);
                 }
+
+                //if (response != null) // Asume que UpdateAsync devuelve el DTO actualizado o null en caso de error
+                //{
+                //    Snackbar.Add("Configuración guardada correctamente.", Severity.Success);
+
+                //    configuracion = ((JsonElement)response.Data).Deserialize<ConfiguracionDto>();
+                //                    //?? new ConfiguracionDto();
+
+                //    //configuracion = (ConfiguracionDto)response.Data; // Actualiza el modelo local con la respuesta de la API
+                //    InicializarIntervalo();
+                //}
+                //else
+                //{
+                //    Snackbar.Add($"Error al guardar la configuración. {response.Message}", Severity.Error);
+                //}
             }
             catch (HttpRequestException httpEx)
             {
