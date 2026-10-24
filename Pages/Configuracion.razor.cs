@@ -7,6 +7,7 @@ using MudBlazor;
 using PWA.Interfaces;
 
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace PWA.Pages
 {
@@ -63,14 +64,11 @@ namespace PWA.Pages
         }
         private async Task CargarConfiguracion()
         {
-            var configuraciones = await servicioConfiguracion.GetAllAsync("api/Configuracion")
-                ?? Enumerable.Empty<ConfiguracionDto>();
-            configuracion = configuraciones.FirstOrDefault();
+            var configuraciones =
+               await servicioConfiguracion.GetAllAsync("api/Configuracion");
 
-            if (configuracion == null)
-            {
-                configuracion = new();
-            }
+            configuracion = configuraciones?.FirstOrDefault()
+                            ?? new ConfiguracionDto();
 
             InicializarIntervalo();
         }
@@ -101,7 +99,11 @@ namespace PWA.Pages
                 if (response != null) // Asume que UpdateAsync devuelve el DTO actualizado o null en caso de error
                 {
                     Snackbar.Add("Configuración guardada correctamente.", Severity.Success);
-                    configuracion = (ConfiguracionDto)response.Data; // Actualiza el modelo local con la respuesta de la API
+
+                    configuracion = ((JsonElement)response.Data).Deserialize<ConfiguracionDto>();
+                                    //?? new ConfiguracionDto();
+
+                    //configuracion = (ConfiguracionDto)response.Data; // Actualiza el modelo local con la respuesta de la API
                     InicializarIntervalo();
                 }
                 else
@@ -121,27 +123,61 @@ namespace PWA.Pages
 
         private void InicializarIntervalo()
         {
+            if (configuracion == null)
+                throw new InvalidOperationException(
+                    "InicializarIntervalo: configuracion es null.");
+
             _suspendIntervalUpdate = true;
+
             try
             {
                 var minutos = Math.Max(1, configuracion.IntervaloEnvioMinutos);
                 var unidad = configuracion.IntervaloEnvioUnidad;
 
-                _intervaloEnvioCantidad = ConvertirDesdeMinutos(minutos, unidad);
-                if (_intervaloEnvioCantidad < 1)
-                {
-                    _intervaloEnvioCantidad = 1;
-                }
+                var factor = ObtenerFactorEnMinutos(unidad);
 
-                configuracion.IntervaloEnvioMinutos = ConvertirAMinutos(_intervaloEnvioCantidad, unidad);
+                if (factor <= 0)
+                    throw new InvalidOperationException(
+                        $"Factor de conversión no válido: {factor}.");
+
+                var unidadCompatible = ObtenerUnidadCompatible(minutos, unidad);
+                _intervaloEnvioCantidad = minutos / ObtenerFactorEnMinutos(unidadCompatible);
+                configuracion.IntervaloEnvioUnidad = unidadCompatible;
             }
             finally
             {
                 _suspendIntervalUpdate = false;
             }
-
-            ActualizarIntervaloEnMinutos();
         }
+
+        //private void InicializarIntervalo()
+        //{
+        //    _suspendIntervalUpdate = true;
+        //    try
+        //    {
+        //        if (configuracion == null)
+        //        {
+        //            configuracion = new();
+        //        }
+
+        //        var minutos = Math.Max(1, configuracion.IntervaloEnvioMinutos);
+        //        var unidad = configuracion.IntervaloEnvioUnidad;
+
+        //        _intervaloEnvioCantidad = ConvertirDesdeMinutos(minutos, unidad);
+        //        if (_intervaloEnvioCantidad < 1)
+        //        {
+        //            _intervaloEnvioCantidad = 1;
+        //        }
+
+        //        configuracion.IntervaloEnvioMinutos = ConvertirAMinutos(_intervaloEnvioCantidad, unidad);
+        //    }
+        //    finally
+        //    {
+        //        _suspendIntervalUpdate = false;
+        //    }
+
+        //    ActualizarIntervaloEnMinutos();
+        //}
 
         private void ActualizarIntervaloEnMinutos()
         {
@@ -153,19 +189,27 @@ namespace PWA.Pages
             configuracion.IntervaloEnvioMinutos = ConvertirAMinutos(_intervaloEnvioCantidad, configuracion.IntervaloEnvioUnidad);
         }
 
-        private static int ConvertirAMinutos(int cantidad, IntervaloTiempoUnidadDto unidad)
+        //private static int ConvertirAMinutos(int cantidad, IntervaloTiempoUnidadDto unidad)
+        //{
+        //    var valor = Math.Max(1, cantidad);
+
+        //    return unidad switch
+        //    {
+        //        IntervaloTiempoUnidadDto.Horas => valor * 60,
+        //        IntervaloTiempoUnidadDto.Dias => valor * 60 * 24,
+        //        IntervaloTiempoUnidadDto.Semanas => valor * 60 * 24 * 7,
+        //        _ => valor
+        //    };
+        //}
+
+        private static int ConvertirAMinutos(
+            int cantidad,
+            IntervaloTiempoUnidadDto unidad)
         {
             var valor = Math.Max(1, cantidad);
 
-            return unidad switch
-            {
-                IntervaloTiempoUnidadDto.Horas => valor * 60,
-                IntervaloTiempoUnidadDto.Dias => valor * 60 * 24,
-                IntervaloTiempoUnidadDto.Semanas => valor * 60 * 24 * 7,
-                _ => valor
-            };
+            return checked(valor * ObtenerFactorEnMinutos(unidad));
         }
-
         private static int ConvertirDesdeMinutos(int minutos, IntervaloTiempoUnidadDto unidad)
         {
             var valor = Math.Max(1, minutos);
@@ -190,11 +234,55 @@ namespace PWA.Pages
             };
         }
 
+        private static int ObtenerFactorEnMinutos(
+                    IntervaloTiempoUnidadDto unidad)
+        {
+            return unidad switch
+            {
+                IntervaloTiempoUnidadDto.Horas => 60,
+                IntervaloTiempoUnidadDto.Dias => 60 * 24,
+                IntervaloTiempoUnidadDto.Semanas => 60 * 24 * 7,
+                _ => 1
+            };
+        }
+
+        private static IntervaloTiempoUnidadDto ObtenerUnidadCompatible(
+            int minutos,
+            IntervaloTiempoUnidadDto unidadPreferida)
+        {
+            // Conservar la unidad actual si representa exactamente el intervalo.
+            if (minutos % ObtenerFactorEnMinutos(unidadPreferida) == 0)
+            {
+                return unidadPreferida;
+            }
+
+            // Si no es compatible, buscar la unidad más grande
+            // que permita representar los minutos sin perder precisión.
+            IntervaloTiempoUnidadDto[] unidades =
+            {
+                IntervaloTiempoUnidadDto.Semanas,
+                IntervaloTiempoUnidadDto.Dias,
+                IntervaloTiempoUnidadDto.Horas,
+                IntervaloTiempoUnidadDto.Minutos
+            };
+
+            foreach (var unidad in unidades)
+            {
+                if (minutos % ObtenerFactorEnMinutos(unidad) == 0)
+                {
+                    return unidad;
+                }
+            }
+
+            return IntervaloTiempoUnidadDto.Minutos;
+        }
+
         private async Task CopyToClipboard(string text)
         {
             await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
             Snackbar.Add($"'{text}' copiado al portapapeles.", Severity.Info);
         }
+
 
         private async Task ProbarCorreo()
         {
